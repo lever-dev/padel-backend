@@ -108,7 +108,7 @@ func (s *repositorySuite) TestListReservations() {
 		},
 	})
 
-	reservations, err := s.repo.ListByTimeRange(
+	reservations, err := s.repo.ListByCourtAndTimeRange(
 		ctx,
 		"court-1",
 		base.Add(-30*time.Minute),

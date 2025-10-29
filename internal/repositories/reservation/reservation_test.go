@@ -2,6 +2,7 @@ package reservation_test
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -23,8 +24,7 @@ func TestRepositorySuite(t *testing.T) {
 }
 
 func (s *repositorySuite) SetupTest() {
-	// TODO: use config
-	connString := "postgres://test:test@localhost:5432/db0?sslmode=disable"
+	connString := os.Getenv("POSTGRES_CONNECTION_URL")
 
 	repo := reservation.NewRepository(connString)
 

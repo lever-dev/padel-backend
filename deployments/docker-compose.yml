@@ -9,8 +9,8 @@ services:
       POSTGRES_PASSWORD: test
     ports:
       - "5432:5432"
-    volumes:
-      - db_data:/var/lib/postgresql/data
+    tmpfs:
+      - /var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U test -d db0"]
       interval: 5s
@@ -30,5 +30,14 @@ services:
     command: ["goose", "-dir", "/migrations", "up"]
     restart: on-failure
 
-volumes:
-  db_data:
+  tests:
+    build:
+      context: ..
+      dockerfile: build/deploy/Dockerfile
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    environment:
+      POSTGRES_CONNECTION_URL: postgres://test:test@postgres:5432/db0?sslmode=disable
+    command: ["go", "test", "-v", "./..."]
+    profiles: ["tests"]

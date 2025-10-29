@@ -6,6 +6,14 @@ run_containers:
 stop_containers:
 	docker compose -f ./deployments/docker-compose.yml down
 
+.PHONY: tests
+tests:
+	docker compose -f deployments/docker-compose.yml --profile tests up --build tests
+
+.PHONY: logs
+logs:
+	docker compose -f deployments/docker-compose.yml logs
+
 .PHONY: fmt
 fmt:
 	@echo "🧹 Formatting Go code..."

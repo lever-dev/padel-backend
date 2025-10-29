@@ -55,10 +55,10 @@ func (s *repositorySuite) TestCreateReservation() {
 		CreatedAt:    time.Date(2024, 7, 1, 8, 0, 0, 0, time.UTC),
 	}
 
-	err := s.repo.CreateReservation(ctx, res)
+	err := s.repo.Create(ctx, res)
 	s.Require().NoError(err)
 
-	resDb, err := s.repo.GetReservationByID(ctx, res.ID)
+	resDb, err := s.repo.GetByID(ctx, res.ID)
 	s.Require().NoError(err)
 
 	s.Require().Equal(res, resDb)
@@ -108,7 +108,7 @@ func (s *repositorySuite) TestListReservations() {
 		},
 	})
 
-	reservations, err := s.repo.ListReservations(
+	reservations, err := s.repo.ListByTimeRange(
 		ctx,
 		"court-1",
 		base.Add(-30*time.Minute),
@@ -139,10 +139,10 @@ func (s *repositorySuite) TestCancelReservation() {
 	s.seedReservations(ctx, []*entities.Reservation{res})
 
 	cancelledBy := "admin-user"
-	err := s.repo.CancelReservation(ctx, res, cancelledBy)
+	err := s.repo.CancelReservation(ctx, res.ID, cancelledBy)
 	s.Require().NoError(err)
 
-	resDb, err := s.repo.GetReservationByID(ctx, res.ID)
+	resDb, err := s.repo.GetByID(ctx, res.ID)
 	s.Require().NoError(err)
 
 	s.Equal(entities.CancelledReservationStatus, resDb.Status)
@@ -151,7 +151,7 @@ func (s *repositorySuite) TestCancelReservation() {
 
 func (s *repositorySuite) TestCancelReservation_NotFound() {
 	ctx := context.Background()
-	err := s.repo.CancelReservation(ctx, &entities.Reservation{ID: "does-not-exist"}, "someone")
+	err := s.repo.CancelReservation(ctx, "does-not-exist-id", "someone")
 	s.Require().Error(err)
 	s.ErrorIs(err, entities.ErrNotFound)
 }
@@ -159,6 +159,6 @@ func (s *repositorySuite) TestCancelReservation_NotFound() {
 func (s *repositorySuite) seedReservations(ctx context.Context, reservations []*entities.Reservation) {
 	s.T().Helper()
 	for _, res := range reservations {
-		s.Require().NoError(s.repo.CreateReservation(ctx, res), "seeding reservation %s", res.ID)
+		s.Require().NoError(s.repo.Create(ctx, res), "seeding reservation %s", res.ID)
 	}
 }

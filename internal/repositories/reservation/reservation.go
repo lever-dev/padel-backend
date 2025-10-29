@@ -36,7 +36,7 @@ func (r *Repository) Close() {
 	}
 }
 
-func (r *Repository) CreateReservation(ctx context.Context, reservation *entities.Reservation) error {
+func (r *Repository) Create(ctx context.Context, reservation *entities.Reservation) error {
 	if r.pool == nil {
 		return fmt.Errorf("not connected to pool")
 	}
@@ -62,6 +62,7 @@ func (r *Repository) CreateReservation(ctx context.Context, reservation *entitie
 	if err != nil {
 		return fmt.Errorf("exec: %w", err)
 	}
+
 	return nil
 }
 
@@ -78,7 +79,7 @@ INSERT INTO reservations (
 ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
 `
 
-func (r *Repository) ListReservations(
+func (r *Repository) ListByCourtAndTimeRange(
 	ctx context.Context,
 	courtID string,
 	from, to time.Time,
@@ -96,7 +97,7 @@ func (r *Repository) ListReservations(
 	var results []entities.Reservation
 
 	for rows.Next() {
-		rsv, err := scanReservation(rows)
+		rsv, err := scan(rows)
 		if err != nil {
 			return nil, fmt.Errorf("scan reservation: %w", err)
 		}
@@ -128,15 +129,12 @@ WHERE court_id = $1
 ORDER BY reserved_from ASC
 `
 
-func (r *Repository) GetReservationByID(ctx context.Context, id string) (*entities.Reservation, error) {
+func (r *Repository) GetByID(ctx context.Context, reservationID string) (*entities.Reservation, error) {
 	if r.pool == nil {
 		return nil, fmt.Errorf("not connected to pool")
 	}
-	if id == "" {
-		return nil, fmt.Errorf("id is required")
-	}
 
-	rsv, err := scanReservation(r.pool.QueryRow(ctx, getReservationByIDQuery, id))
+	rsv, err := scan(r.pool.QueryRow(ctx, getReservationByIDQuery, reservationID))
 	if err != nil {
 		return nil, fmt.Errorf("scan reservation: %w", err)
 	}
@@ -157,11 +155,11 @@ const getReservationByIDQuery = `
 	FROM reservations
 	WHERE id = $1
 	LIMIT 1
-	`
+`
 
 func (r *Repository) CancelReservation(
 	ctx context.Context,
-	reservation *entities.Reservation,
+	reservationID string,
 	cancelledByUser string,
 ) error {
 	if r.pool == nil {
@@ -173,7 +171,7 @@ func (r *Repository) CancelReservation(
 		cancelReservationQuery,
 		entities.CancelledReservationStatus,
 		cancelledByUser,
-		reservation.ID,
+		reservationID,
 	)
 	if err != nil {
 		return fmt.Errorf("exec: %w", err)
@@ -182,9 +180,6 @@ func (r *Repository) CancelReservation(
 	if tag.RowsAffected() == 0 {
 		return entities.ErrNotFound
 	}
-
-	reservation.Status = entities.CancelledReservationStatus
-	reservation.CancelledBy = cancelledByUser
 
 	return nil
 }
@@ -208,7 +203,7 @@ type rowScanner interface {
 	Scan(dest ...any) error
 }
 
-func scanReservation(scanner rowScanner) (entities.Reservation, error) {
+func scan(scanner rowScanner) (entities.Reservation, error) {
 	var (
 		d           dto
 		cancelledBy sql.NullString

@@ -21,3 +21,6 @@ fmt:
 	@golines --max-len=120 --base-formatter=gofmt --shorten-comments --ignore-generated  --ignored-dirs=vendor -w .
 	@echo "✅ Code formatted successfully"
 
+.PHONY: lint
+lint:
+	golangci-lint run

@@ -11,6 +11,7 @@ type dto struct {
 	Name      string
 	City      string
 	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func newDTO(o *entities.Organization) dto {
@@ -19,6 +20,7 @@ func newDTO(o *entities.Organization) dto {
 		Name:      o.Name,
 		City:      o.City,
 		CreatedAt: o.CreatedAt,
+		UpdatedAt: o.UpdatedAt,
 	}
 }
 
@@ -28,5 +30,6 @@ func (d dto) toEntity() entities.Organization {
 		Name:      d.Name,
 		City:      d.City,
 		CreatedAt: d.CreatedAt,
+		UpdatedAt: d.UpdatedAt,
 	}
 }

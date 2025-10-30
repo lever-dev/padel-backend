@@ -50,6 +50,7 @@ func (s *repositorySuite) TestCreateOrganization() {
 		Name:      "org-1",
 		City:      "Almaty",
 		CreatedAt: time.Date(2024, 7, 1, 8, 0, 0, 0, time.UTC),
+		UpdatedAt: time.Date(2024, 7, 1, 8, 0, 0, 0, time.UTC),
 	}
 
 	err := s.repo.Create(ctx, org)
@@ -69,6 +70,7 @@ func (s *repositorySuite) TestGetOrganizationByID() {
 		Name:      "org-1",
 		City:      "Aktobe",
 		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 	}
 
 	s.seedOrganizations(ctx, []*entities.Organization{org})
@@ -146,6 +148,7 @@ func (s *repositorySuite) TestUpdateOrganization() {
 		Name:      "Old Name",
 		City:      "Almaty",
 		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 	}
 
 	s.seedOrganizations(ctx, []*entities.Organization{org})
@@ -160,6 +163,7 @@ func (s *repositorySuite) TestUpdateOrganization() {
 	s.Require().NoError(err)
 	s.Equal("New Name", updated.Name)
 	s.Equal("Astana", updated.City)
+	s.NotEqual(org.UpdatedAt, updated.UpdatedAt)
 }
 
 func (s *repositorySuite) TestUpdateOrganization_NotFound() {
@@ -184,6 +188,7 @@ func (s *repositorySuite) TestDeleteOrganization() {
 		Name:      "To Be Deleted",
 		City:      "Almaty",
 		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 	}
 
 	s.seedOrganizations(ctx, []*entities.Organization{org})

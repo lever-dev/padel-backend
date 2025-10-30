@@ -46,6 +46,7 @@ func (r *Repository) Create(ctx context.Context, organization *entities.Organiza
 
 	if organization.CreatedAt.IsZero() {
 		organization.CreatedAt = time.Now().UTC()
+		organization.UpdatedAt = time.Now().UTC()
 	}
 
 	d := newDTO(organization)
@@ -57,6 +58,7 @@ func (r *Repository) Create(ctx context.Context, organization *entities.Organiza
 		d.Name,
 		d.City,
 		d.CreatedAt,
+		d.UpdatedAt,
 	)
 	if err != nil {
 		return fmt.Errorf("exec: %w", err)
@@ -70,8 +72,9 @@ const createOrganizationQuery = `
 		id,
 		name,
 		city,
-		created_at
-	) VALUES ($1, $2, $3, $4)
+		created_at,
+		updated_at
+	) VALUES ($1, $2, $3, $4, $5)
 `
 
 func (r *Repository) GetByID(ctx context.Context, organizationID string) (*entities.Organization, error) {
@@ -95,7 +98,8 @@ const getOrganizationByIDQuery = `
 		id,
 		name,
 		city,
-		created_at
+		created_at,
+		updated_at
 	FROM organizations
 	WHERE id = $1
 	LIMIT 1
@@ -135,7 +139,8 @@ const getOrganizationsByCityQuery = `
 		id,
 		name,
 		city,
-		created_at
+		created_at,
+		updated_at
 	FROM organizations
 	WHERE city = $1
 `
@@ -145,11 +150,14 @@ func (r *Repository) Update(ctx context.Context, org *entities.Organization) err
 		return fmt.Errorf("not connected to pool")
 	}
 
+	org.UpdatedAt = time.Now().UTC()
+
 	tag, err := r.pool.Exec(
 		ctx,
 		updateOrganizationQuery,
 		org.Name,
 		org.City,
+		org.UpdatedAt,
 		org.ID,
 	)
 	if err != nil {
@@ -167,8 +175,9 @@ const updateOrganizationQuery = `
 	UPDATE organizations
 	SET 
     	name = $1,
-    	city = $2
-	WHERE id = $3
+    	city = $2,
+		updated_at = $3
+	WHERE id = $4
 `
 
 func (r *Repository) Delete(ctx context.Context, id string) error {
@@ -205,12 +214,14 @@ func scan(scanner rowScanner) (entities.Organization, error) {
 		&d.Name,
 		&d.City,
 		&d.CreatedAt,
+		&d.UpdatedAt,
 	)
 	if err != nil {
 		return entities.Organization{}, err
 	}
 
 	d.CreatedAt = d.CreatedAt.UTC()
+	d.UpdatedAt = d.UpdatedAt.UTC()
 
 	return d.toEntity(), nil
 }

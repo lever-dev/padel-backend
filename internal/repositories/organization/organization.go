@@ -127,10 +127,6 @@ func (r *Repository) GetOrganizationsByCity(ctx context.Context, city string) ([
 		return nil, fmt.Errorf("rows err: %w", err)
 	}
 
-	if len(results) == 0 {
-		return nil, entities.ErrNotFound
-	}
-
 	return results, nil
 }
 
@@ -144,9 +140,58 @@ const getOrganizationsByCityQuery = `
 	WHERE city = $1
 `
 
-// TO DO: UpdateOrganization(ctx, organizationID, name, string) error
+func (r *Repository) Update(ctx context.Context, org *entities.Organization) error {
+	if r.pool == nil {
+		return fmt.Errorf("not connected to pool")
+	}
 
-// TO DO: DeleteOrganization(ctx, organizationID) error
+	tag, err := r.pool.Exec(
+		ctx,
+		updateOrganizationQuery,
+		org.Name,
+		org.City,
+		org.ID,
+	)
+	if err != nil {
+		return fmt.Errorf("exec: %w", err)
+	}
+
+	if tag.RowsAffected() == 0 {
+		return entities.ErrNotFound
+	}
+
+	return nil
+}
+
+const updateOrganizationQuery = `
+	UPDATE organizations
+	SET 
+    	name = $1,
+    	city = $2
+	WHERE id = $3
+`
+
+func (r *Repository) Delete(ctx context.Context, id string) error {
+	if r.pool == nil {
+		return fmt.Errorf("not connected to pool")
+	}
+
+	tag, err := r.pool.Exec(ctx, deleteOrganizationQuery, id)
+	if err != nil {
+		return fmt.Errorf("exec: %w", err)
+	}
+
+	if tag.RowsAffected() == 0 {
+		return entities.ErrNotFound
+	}
+
+	return nil
+}
+
+const deleteOrganizationQuery = `
+	DELETE FROM organizations
+	WHERE id = $1
+`
 
 type rowScanner interface {
 	Scan(dest ...any) error

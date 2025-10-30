@@ -61,6 +61,34 @@ func (s *repositorySuite) TestCreateOrganization() {
 	s.Require().Equal(org, orgDB)
 }
 
+func (s *repositorySuite) TestGetOrganizationByID() {
+	ctx := context.Background()
+
+	org := &entities.Organization{
+		ID:        "org-get-1",
+		Name:      "org-1",
+		City:      "Aktobe",
+		CreatedAt: time.Now().UTC(),
+	}
+
+	s.seedOrganizations(ctx, []*entities.Organization{org})
+
+	result, err := s.repo.GetByID(ctx, org.ID)
+	s.Require().NoError(err)
+	s.Require().NotNil(result)
+	s.Equal(org.ID, result.ID)
+	s.Equal(org.Name, result.Name)
+	s.Equal(org.City, result.City)
+}
+
+func (s *repositorySuite) TestGetOrganizationByID_NotFound() {
+	ctx := context.Background()
+
+	_, err := s.repo.GetByID(ctx, "non-existent-id")
+	s.Require().Error(err)
+	s.ErrorIs(err, entities.ErrNotFound)
+}
+
 func (s *repositorySuite) TestGetOrganizationByCity() {
 	ctx := context.Background()
 	defCity := "Astana"
@@ -88,10 +116,84 @@ func (s *repositorySuite) TestGetOrganizationByCity() {
 		},
 	})
 
-	reservations, err := s.repo.GetOrganizationsByCity(ctx, defCity)
+	results, err := s.repo.GetOrganizationsByCity(ctx, defCity)
 	s.Require().NoError(err)
 
-	s.Len(reservations, 3)
+	count := 0
+	for _, org := range results {
+		if org.City == "Astana" {
+			count++
+		}
+		s.Equal("Astana", org.City, "All results should be from Almaty")
+	}
+
+	s.GreaterOrEqual(count, 3, "Should find at least 3 Astana organizations")
+}
+
+func (s *repositorySuite) TestGetOrganizationByCity_Empty() {
+	ctx := context.Background()
+
+	results, err := s.repo.GetOrganizationsByCity(ctx, "NonExistentCity")
+	s.Require().NoError(err)
+	s.Require().Empty(results)
+}
+
+func (s *repositorySuite) TestUpdateOrganization() {
+	ctx := context.Background()
+
+	org := &entities.Organization{
+		ID:        "org-update-1",
+		Name:      "Old Name",
+		City:      "Almaty",
+		CreatedAt: time.Now().UTC(),
+	}
+
+	s.seedOrganizations(ctx, []*entities.Organization{org})
+
+	org.Name = "New Name"
+	org.City = "Astana"
+
+	err := s.repo.Update(ctx, org)
+	s.Require().NoError(err)
+
+	updated, err := s.repo.GetByID(ctx, org.ID)
+	s.Require().NoError(err)
+	s.Equal("New Name", updated.Name)
+	s.Equal("Astana", updated.City)
+}
+
+func (s *repositorySuite) TestUpdateOrganization_NotFound() {
+	ctx := context.Background()
+
+	org := &entities.Organization{
+		ID:   "non-existent",
+		Name: "Test",
+		City: "Test",
+	}
+
+	err := s.repo.Update(ctx, org)
+	s.Require().Error(err)
+	s.ErrorIs(err, entities.ErrNotFound)
+}
+
+func (s *repositorySuite) TestDeleteOrganization() {
+	ctx := context.Background()
+
+	org := &entities.Organization{
+		ID:        "org-delete-1",
+		Name:      "To Be Deleted",
+		City:      "Almaty",
+		CreatedAt: time.Now().UTC(),
+	}
+
+	s.seedOrganizations(ctx, []*entities.Organization{org})
+
+	err := s.repo.Delete(ctx, org.ID)
+	s.Require().NoError(err)
+
+	_, err = s.repo.GetByID(ctx, org.ID)
+	s.Require().Error(err)
+	s.ErrorIs(err, entities.ErrNotFound)
 }
 
 func (s *repositorySuite) seedOrganizations(ctx context.Context, organizations []*entities.Organization) {

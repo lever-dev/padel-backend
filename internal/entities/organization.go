@@ -8,3 +8,5 @@ type Organization struct {
 	City      string
 	CreatedAt time.Time
 }
+
+// TO DO: NewOrganization constructor and validation

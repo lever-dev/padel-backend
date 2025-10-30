@@ -7,4 +7,5 @@ type Court struct {
 	OrganizationID string
 	Name           string
 	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }

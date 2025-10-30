@@ -2,7 +2,6 @@ package court
 
 import (
 	"time"
-
 	"github.com/lever-dev/padel-backend/internal/entities"
 )
 

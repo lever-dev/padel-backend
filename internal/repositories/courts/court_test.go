@@ -10,7 +10,9 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/lever-dev/padel-backend/internal/entities"
+
 	"github.com/lever-dev/padel-backend/internal/repositories/courts"
+
 )
 
 type repositorySuite struct {
@@ -101,7 +103,6 @@ func (s *repositorySuite) TestListByOrganizationID() {
 	s.Equal("court-list-2", list[1].ID)
 	s.Equal("Court A", list[0].Name)
 	s.Equal("Court B", list[1].Name)
-
 }
 
 func (s *repositorySuite) TestUpdateCourt() {

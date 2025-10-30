@@ -13,5 +13,7 @@ CREATE INDEX idx_organizations_city ON organizations (city);
 
 -- +goose Down
 -- +goose StatementBegin
+DROP INDEX IF EXISTS idx_organizations_city;
+
 DROP TABLE IF EXISTS organizations;
 -- +goose StatementEnd

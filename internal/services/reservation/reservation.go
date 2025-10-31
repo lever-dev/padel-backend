@@ -20,10 +20,19 @@ func (s Service) ReserveCourt(ctx context.Context, courtID string, reservation e
 	return nil
 }
 
-func (s Service) ListReservations(ctx context.Context, courtID string, from, to time.Time) ([]entities.Reservation, error) {
+func (s Service) ListReservations(
+	ctx context.Context,
+	courtID string,
+	from, to time.Time,
+) ([]entities.Reservation, error) {
 	return nil, nil
 }
 
-func (s Service) CancelReservation(ctx context.Context, courtID string, reservation entities.Reservation, cancelledBy string) ([]entities.Reservation, error) {
+func (s Service) CancelReservation(
+	ctx context.Context,
+	courtID string,
+	reservation entities.Reservation,
+	cancelledBy string,
+) ([]entities.Reservation, error) {
 	return nil, nil
 }

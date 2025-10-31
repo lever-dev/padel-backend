@@ -97,8 +97,11 @@ func (s *repositorySuite) TestListByOrganizationID() {
 	list, err := s.repo.ListByOrganizationID(ctx, "org-2")
 	s.Require().NoError(err)
 	s.Len(list, 2)
+	s.Equal("court-list-1", list[0].ID)
+	s.Equal("court-list-2", list[1].ID)
 	s.Equal("Court A", list[0].Name)
 	s.Equal("Court B", list[1].Name)
+
 }
 
 func (s *repositorySuite) TestUpdateCourt() {
@@ -118,7 +121,9 @@ func (s *repositorySuite) TestUpdateCourt() {
 
 	cDb, err := s.repo.GetByID(ctx, c.ID)
 	s.Require().NoError(err)
+	s.False(cDb.UpdatedAt.IsZero(), "UpdatedAt should be set after update")
 	s.Equal("Updated Name", cDb.Name)
+
 }
 
 func (s *repositorySuite) TestDeleteCourt() {
@@ -139,4 +144,3 @@ func (s *repositorySuite) TestDeleteCourt() {
 	s.Require().Error(err)
 	s.ErrorIs(err, entities.ErrNotFound)
 }
-

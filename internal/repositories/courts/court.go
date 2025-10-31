@@ -6,13 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v5" 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/lever-dev/padel-backend/internal/entities"
 )
-
-
-
 
 type Repository struct {
 	connectionURL string
@@ -23,18 +20,17 @@ func NewRepository(connectionURL string) *Repository {
 	return &Repository{connectionURL: connectionURL}
 }
 
-
 func (r *Repository) Connect(ctx context.Context) error {
-    ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-    defer cancel()
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 
-    p, err := pgxpool.New(ctx, r.connectionURL)
-    if err != nil {
-        return fmt.Errorf("pgxpool new: %w", err)
-    }
+	p, err := pgxpool.New(ctx, r.connectionURL)
+	if err != nil {
+		return fmt.Errorf("pgxpool new: %w", err)
+	}
 
-    r.pool = p
-    return nil
+	r.pool = p
+	return nil
 }
 
 func (r *Repository) Close() {
@@ -51,8 +47,6 @@ func (r *Repository) Create(ctx context.Context, court *entities.Court) error {
 	if court.CreatedAt.IsZero() {
 		court.CreatedAt = time.Now().UTC()
 	}
-
-	court.UpdatedAt = time.Now().UTC()
 
 	d := newDTO(court)
 
@@ -107,10 +101,9 @@ const getCourtByIDQuery = `
 		updated_at
 	FROM courts
 	WHERE id = $1
-	LIMIT 1
 `
 
-func (r* Repository) ListByOrganizationID(ctx context.Context, organizationID string) ([]entities.Court, error) {
+func (r *Repository) ListByOrganizationID(ctx context.Context, organizationID string) ([]entities.Court, error) {
 	if r.pool == nil {
 		return nil, fmt.Errorf("not connected to pool")
 	}
@@ -148,8 +141,6 @@ const listCourtsByOrganizationIDQuery = `
 	WHERE organization_id = $1
 	ORDER BY name ASC
 `
-
-
 
 func (r *Repository) Update(ctx context.Context, crt *entities.Court) error {
 	if r.pool == nil {
@@ -221,7 +212,7 @@ func scan(scanner rowScanner) (entities.Court, error) {
 		&d.Name,
 		&d.CreatedAt,
 		&d.UpdatedAt,
-)
+	)
 	if err != nil {
 		return entities.Court{}, err
 	}

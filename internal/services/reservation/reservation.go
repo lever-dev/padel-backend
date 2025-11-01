@@ -2,7 +2,7 @@ package reservation
 
 import (
 	"context"
-	"sync"
+	"fmt"
 	"time"
 
 	"github.com/lever-dev/padel-backend/internal/entities"
@@ -10,25 +10,40 @@ import (
 
 type Service struct {
 	reservationsRepo ReservationsRepository
-	courtMutexes     map[string]*sync.Mutex
-	mu               sync.Mutex
+	locker           Locker
 }
 
-func NewService(repo ReservationsRepository) *Service {
+func NewService(repo ReservationsRepository, l Locker) *Service {
 	return &Service{
 		reservationsRepo: repo,
-		courtMutexes:     make(map[string]*sync.Mutex),
+		locker:           l,
 	}
 }
 
 func (s *Service) ReserveCourt(ctx context.Context, courtID string, reservation entities.Reservation) error {
-	// TO DO: validation
+	if err := s.locker.Lock(ctx, courtID); err != nil {
+		return fmt.Errorf("failed to lock court: %w", err)
+	}
 
-	courtMutex := s.getCourtMutex(courtID)
-	courtMutex.Lock()
-	defer courtMutex.Unlock()
+	defer func() {
+		if err := s.locker.Unlock(ctx, courtID); err != nil {
+			// TO DO: Maybe log
+		}
+	}()
 
-	// TO DO: check conflict
+	hasConflict, err := s.reservationsRepo.HasOverlapping(
+		ctx,
+		courtID,
+		reservation.ReservedFrom,
+		reservation.ReservedTo,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to check overlapping reservations: %w", err)
+	}
+
+	if hasConflict {
+		return entities.ErrCourtAlreadyReserved
+	}
 
 	return s.reservationsRepo.Create(ctx, &reservation)
 }
@@ -48,14 +63,4 @@ func (s *Service) CancelReservation(
 	cancelledBy string,
 ) ([]entities.Reservation, error) {
 	return nil, nil
-}
-
-func (s *Service) getCourtMutex(courtID string) *sync.Mutex {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if _, exists := s.courtMutexes[courtID]; !exists {
-		s.courtMutexes[courtID] = &sync.Mutex{}
-	}
-	return s.courtMutexes[courtID]
 }

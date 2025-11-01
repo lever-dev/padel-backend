@@ -12,6 +12,7 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	entities "github.com/lever-dev/padel-backend/internal/entities"
 	gomock "go.uber.org/mock/gomock"
@@ -53,4 +54,19 @@ func (m *MockReservationsRepository) Create(ctx context.Context, reservation *en
 func (mr *MockReservationsRepositoryMockRecorder) Create(ctx, reservation any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockReservationsRepository)(nil).Create), ctx, reservation)
+}
+
+// HasOverlapping mocks base method.
+func (m *MockReservationsRepository) HasOverlapping(ctx context.Context, courtID string, from, to time.Time) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasOverlapping", ctx, courtID, from, to)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// HasOverlapping indicates an expected call of HasOverlapping.
+func (mr *MockReservationsRepositoryMockRecorder) HasOverlapping(ctx, courtID, from, to any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasOverlapping", reflect.TypeOf((*MockReservationsRepository)(nil).HasOverlapping), ctx, courtID, from, to)
 }

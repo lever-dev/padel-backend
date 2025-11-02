@@ -1,5 +1,21 @@
 package main
 
-func main() {
+import (
+	"fmt"
+	"os"
 
+	"github.com/spf13/cobra"
+)
+
+var rootCmd = &cobra.Command{
+	Use:   "padel-backend",
+	Short: "Padel Backend Server",
+	Long:  "Padel Backend API server",
+}
+
+func main() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }

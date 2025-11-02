@@ -6,6 +6,10 @@ run_containers:
 stop_containers:
 	docker compose -f ./deployments/docker-compose.yml down
 
+.PHONY: run_server
+run_server:
+	go run ./cmd/. serve
+
 .PHONY: tests
 tests:
 	docker compose -f deployments/docker-compose.yml --profile tests up --build tests

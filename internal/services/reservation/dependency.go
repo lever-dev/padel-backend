@@ -11,5 +11,5 @@ import (
 
 type ReservationsRepository interface {
 	Create(ctx context.Context, reservation *entities.Reservation) error
-	HasOverlapping(ctx context.Context, courtID string, from, to time.Time) (bool, error)
+	ListByCourtAndTimeRange(ctx context.Context, courtID string, from, to time.Time) ([]entities.Reservation, error)
 }

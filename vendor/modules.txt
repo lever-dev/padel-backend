@@ -26,11 +26,22 @@ github.com/jackc/puddle/v2
 github.com/jackc/puddle/v2/internal/genstack
 # github.com/kr/text v0.2.0
 ## explicit
+# github.com/mattn/go-colorable v0.1.13
+## explicit; go 1.15
+github.com/mattn/go-colorable
+# github.com/mattn/go-isatty v0.0.19
+## explicit; go 1.15
+github.com/mattn/go-isatty
 # github.com/pmezard/go-difflib v1.0.0
 ## explicit
 github.com/pmezard/go-difflib/difflib
 # github.com/rogpeppe/go-internal v1.14.1
 ## explicit; go 1.23
+# github.com/rs/zerolog v1.34.0
+## explicit; go 1.15
+github.com/rs/zerolog
+github.com/rs/zerolog/internal/cbor
+github.com/rs/zerolog/internal/json
 # github.com/stretchr/testify v1.10.0
 ## explicit; go 1.17
 github.com/stretchr/testify/assert
@@ -46,6 +57,9 @@ golang.org/x/crypto/pbkdf2
 # golang.org/x/sync v0.16.0
 ## explicit; go 1.23.0
 golang.org/x/sync/semaphore
+# golang.org/x/sys v0.32.0
+## explicit; go 1.23.0
+golang.org/x/sys/unix
 # golang.org/x/text v0.24.0
 ## explicit; go 1.23.0
 golang.org/x/text/cases

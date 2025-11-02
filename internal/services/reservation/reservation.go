@@ -6,17 +6,20 @@ import (
 	"time"
 
 	"github.com/lever-dev/padel-backend/internal/entities"
+	"github.com/rs/zerolog"
 )
 
 type Service struct {
 	reservationsRepo ReservationsRepository
 	locker           Locker
+	logger           zerolog.Logger
 }
 
-func NewService(repo ReservationsRepository, l Locker) *Service {
+func NewService(repo ReservationsRepository, locker Locker, logger zerolog.Logger) *Service {
 	return &Service{
 		reservationsRepo: repo,
-		locker:           l,
+		locker:           locker,
+		logger:           logger,
 	}
 }
 
@@ -27,11 +30,11 @@ func (s *Service) ReserveCourt(ctx context.Context, courtID string, reservation 
 
 	defer func() {
 		if err := s.locker.Unlock(ctx, courtID); err != nil {
-			// TO DO: Maybe log
+			s.logger.Error().Err(err).Str("court_id", courtID).Msg("failed to unlock court")
 		}
 	}()
 
-	hasConflict, err := s.reservationsRepo.HasOverlapping(
+	overlapping, err := s.reservationsRepo.ListByCourtAndTimeRange(
 		ctx,
 		courtID,
 		reservation.ReservedFrom,
@@ -41,7 +44,7 @@ func (s *Service) ReserveCourt(ctx context.Context, courtID string, reservation 
 		return fmt.Errorf("failed to check overlapping reservations: %w", err)
 	}
 
-	if hasConflict {
+	if len(overlapping) > 0 {
 		return entities.ErrCourtAlreadyReserved
 	}
 

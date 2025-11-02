@@ -3,6 +3,7 @@ package reservation_test
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -10,17 +11,14 @@ import (
 	"github.com/lever-dev/padel-backend/internal/entities"
 	"github.com/lever-dev/padel-backend/internal/services/reservation"
 	"github.com/lever-dev/padel-backend/internal/services/reservation/mocks"
+	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
 
 type ServiceSuite struct {
 	suite.Suite
-
-	ctrl     *gomock.Controller
-	mockRepo *mocks.MockReservationsRepository
-	locker   reservation.Locker
-	service  *reservation.Service
+	ctrl *gomock.Controller
 }
 
 func TestServiceSuite(t *testing.T) {
@@ -29,104 +27,152 @@ func TestServiceSuite(t *testing.T) {
 
 func (s *ServiceSuite) SetupTest() {
 	s.ctrl = gomock.NewController(s.T())
-	s.mockRepo = mocks.NewMockReservationsRepository(s.ctrl)
-	s.locker = reservation.NewLocalLocker()
-	s.service = reservation.NewService(s.mockRepo, s.locker)
 }
 
 func (s *ServiceSuite) TearDownTest() {
 	s.ctrl.Finish()
 }
 
-func (s *ServiceSuite) TestReserveCourt_Success() {
-	ctx := context.Background()
-	courtID := "court-1"
-
-	reservation := entities.Reservation{
-		ID:           "reservation-1",
-		CourtID:      courtID,
-		ReservedBy:   "user-1",
-		Status:       entities.PendingReservationStatus,
-		ReservedFrom: time.Now().Add(1 * time.Hour),
-		ReservedTo:   time.Now().Add(2 * time.Hour),
-		CreatedAt:    time.Now(),
+func (s *ServiceSuite) TestReserveCourt() {
+	tests := []struct {
+		name          string
+		courtID       string
+		reservation   entities.Reservation
+		setupMocks    func(mockRepo *mocks.MockReservationsRepository, res entities.Reservation)
+		expectedError error
+		checkError    func(error) bool
+	}{
+		{
+			name:    "success",
+			courtID: "court-1",
+			reservation: entities.Reservation{
+				ID:           "reservation-1",
+				CourtID:      "court-1",
+				ReservedBy:   "user-1",
+				Status:       entities.PendingReservationStatus,
+				ReservedFrom: time.Now().Add(1 * time.Hour),
+				ReservedTo:   time.Now().Add(2 * time.Hour),
+				CreatedAt:    time.Now(),
+			},
+			setupMocks: func(mockRepo *mocks.MockReservationsRepository, res entities.Reservation) {
+				mockRepo.EXPECT().
+					ListByCourtAndTimeRange(gomock.Any(), "court-1", res.ReservedFrom, res.ReservedTo).
+					Return([]entities.Reservation{}, nil)
+				mockRepo.EXPECT().
+					Create(gomock.Any(), &res).
+					Return(nil)
+			},
+			expectedError: nil,
+		},
+		{
+			name:    "conflict - court reserved",
+			courtID: "court-1",
+			reservation: entities.Reservation{
+				ID:           "reservation-2",
+				CourtID:      "court-1",
+				ReservedBy:   "user-2",
+				Status:       entities.PendingReservationStatus,
+				ReservedFrom: time.Now().Add(1 * time.Hour),
+				ReservedTo:   time.Now().Add(2 * time.Hour),
+				CreatedAt:    time.Now(),
+			},
+			setupMocks: func(mockRepo *mocks.MockReservationsRepository, res entities.Reservation) {
+				mockRepo.EXPECT().
+					ListByCourtAndTimeRange(gomock.Any(), "court-1", res.ReservedFrom, res.ReservedTo).
+					Return([]entities.Reservation{
+						{
+							ID:           "existing-reservation",
+							CourtID:      "court-1",
+							ReservedBy:   "other-user",
+							Status:       entities.ReservedReservationStatus,
+							ReservedFrom: time.Now().Add(1 * time.Hour),
+							ReservedTo:   time.Now().Add(2 * time.Hour),
+						},
+					}, nil)
+			},
+			expectedError: entities.ErrCourtAlreadyReserved,
+		},
+		{
+			name:    "create error",
+			courtID: "court-1",
+			reservation: entities.Reservation{
+				ID:           "reservation-3",
+				CourtID:      "court-1",
+				ReservedBy:   "user-3",
+				Status:       entities.PendingReservationStatus,
+				ReservedFrom: time.Now().Add(1 * time.Hour),
+				ReservedTo:   time.Now().Add(2 * time.Hour),
+				CreatedAt:    time.Now(),
+			},
+			setupMocks: func(mockRepo *mocks.MockReservationsRepository, res entities.Reservation) {
+				mockRepo.EXPECT().
+					ListByCourtAndTimeRange(gomock.Any(), "court-1", res.ReservedFrom, res.ReservedTo).
+					Return([]entities.Reservation{}, nil)
+				mockRepo.EXPECT().
+					Create(gomock.Any(), &res).
+					Return(fmt.Errorf("database insert error"))
+			},
+			checkError: func(err error) bool {
+				return err != nil && err.Error() != ""
+			},
+		},
 	}
 
-	s.mockRepo.EXPECT().
-		HasOverlapping(ctx, courtID, reservation.ReservedFrom, reservation.ReservedTo).
-		Return(false, nil)
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			ctx := context.Background()
 
-	s.mockRepo.EXPECT().Create(ctx, &reservation).Return(nil)
+			mockRepo := mocks.NewMockReservationsRepository(s.ctrl)
+			locker := reservation.NewLocalLocker()
+			logger := zerolog.New(os.Stdout).Level(zerolog.Disabled)
+			service := reservation.NewService(mockRepo, locker, logger)
 
-	err := s.service.ReserveCourt(ctx, courtID, reservation)
-	s.NoError(err)
-}
+			tt.setupMocks(mockRepo, tt.reservation)
 
-func (s *ServiceSuite) TestReserveCourt_WithConflict() {
-	ctx := context.Background()
-	courtID := "court-1"
+			err := service.ReserveCourt(ctx, tt.courtID, tt.reservation)
 
-	reservation := entities.Reservation{
-		ID:           "reservation-1",
-		CourtID:      courtID,
-		ReservedBy:   "user-1",
-		Status:       entities.PendingReservationStatus,
-		ReservedFrom: time.Now().Add(1 * time.Hour),
-		ReservedTo:   time.Now().Add(2 * time.Hour),
-		CreatedAt:    time.Now(),
+			if tt.expectedError != nil {
+				s.Error(err)
+				s.ErrorIs(err, tt.expectedError)
+			} else if tt.checkError != nil {
+				s.True(tt.checkError(err))
+			} else {
+				s.NoError(err)
+			}
+		})
 	}
-
-	s.mockRepo.EXPECT().HasOverlapping(ctx, courtID, reservation.ReservedFrom, reservation.ReservedTo).Return(true, nil)
-
-	s.mockRepo.EXPECT().Create(ctx, &reservation).Times(0)
-
-	err := s.service.ReserveCourt(ctx, courtID, reservation)
-	s.Error(err)
-	s.ErrorIs(err, entities.ErrCourtAlreadyReserved)
-}
-
-func (s *ServiceSuite) TestReserveCourt_CreateError() {
-	ctx := context.Background()
-	courtID := "court-1"
-
-	reservation := entities.Reservation{
-		ID:           "reservation-1",
-		CourtID:      courtID,
-		ReservedBy:   "user-1",
-		Status:       entities.PendingReservationStatus,
-		ReservedFrom: time.Now().Add(1 * time.Hour),
-		ReservedTo:   time.Now().Add(2 * time.Hour),
-		CreatedAt:    time.Now(),
-	}
-
-	s.mockRepo.EXPECT().
-		HasOverlapping(ctx, courtID, reservation.ReservedFrom, reservation.ReservedTo).
-		Return(false, nil)
-
-	myErr := fmt.Errorf("Error")
-	s.mockRepo.EXPECT().Create(ctx, &reservation).Return(myErr)
-
-	err := s.service.ReserveCourt(ctx, courtID, reservation)
-	s.Error(err)
-	s.ErrorIs(err, myErr)
 }
 
 func (s *ServiceSuite) TestReserveCourt_ConcurrentReservations() {
 	ctx := context.Background()
 	courtID := "court-1"
 
-	firstCall := s.mockRepo.EXPECT().HasOverlapping(ctx, courtID, gomock.Any(), gomock.Any()).Return(false, nil)
+	mockRepo := mocks.NewMockReservationsRepository(s.ctrl)
+	locker := reservation.NewLocalLocker()
+	logger := zerolog.New(os.Stdout).Level(zerolog.Disabled)
+	service := reservation.NewService(mockRepo, locker, logger)
 
-	s.mockRepo.EXPECT().Create(ctx, gomock.Any()).Return(nil).Times(1).After(firstCall)
+	firstCall := mockRepo.EXPECT().ListByCourtAndTimeRange(ctx, courtID, gomock.Any(), gomock.Any()).Return([]entities.Reservation{}, nil)
 
-	s.mockRepo.EXPECT().
-		HasOverlapping(ctx, courtID, gomock.Any(), gomock.Any()).
-		Return(true, nil).
+	mockRepo.EXPECT().Create(ctx, gomock.Any()).Return(nil).Times(1).After(firstCall)
+
+	mockRepo.EXPECT().
+		ListByCourtAndTimeRange(ctx, courtID, gomock.Any(), gomock.Any()).
+		Return([]entities.Reservation{
+			{
+				ID:           "existing",
+				CourtID:      courtID,
+				ReservedBy:   "user-1",
+				Status:       entities.ReservedReservationStatus,
+				ReservedFrom: time.Now().Add(1 * time.Hour),
+				ReservedTo:   time.Now().Add(2 * time.Hour),
+			},
+		}, nil).
 		AnyTimes().
 		After(firstCall)
 
 	var wg sync.WaitGroup
-	results := make(chan error, 2)
+	results := make(chan error)
 
 	for i := 0; i < 2; i++ {
 		wg.Add(1)
@@ -143,23 +189,24 @@ func (s *ServiceSuite) TestReserveCourt_ConcurrentReservations() {
 				CreatedAt:    time.Now(),
 			}
 
-			err := s.service.ReserveCourt(ctx, courtID, reservation)
-			results <- err
+			results <- service.ReserveCourt(ctx, courtID, reservation)
 		}()
 	}
 
-	wg.Wait()
-	close(results)
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
 
 	successCount := 0
 	errorCount := 0
 
 	for err := range results {
-		if err == nil {
-			successCount++
-		} else {
+		if err != nil {
 			errorCount++
+			continue
 		}
+		successCount++
 	}
 
 	s.Equal(1, successCount)
@@ -169,14 +216,19 @@ func (s *ServiceSuite) TestReserveCourt_ConcurrentReservations() {
 func (s *ServiceSuite) TestReserveCourt_DifferentCourts() {
 	ctx := context.Background()
 
-	s.mockRepo.EXPECT().HasOverlapping(ctx, "court-1", gomock.Any(), gomock.Any()).Return(false, nil)
+	mockRepo := mocks.NewMockReservationsRepository(s.ctrl)
+	locker := reservation.NewLocalLocker()
+	logger := zerolog.New(os.Stdout).Level(zerolog.Disabled)
+	service := reservation.NewService(mockRepo, locker, logger)
 
-	s.mockRepo.EXPECT().HasOverlapping(ctx, "court-2", gomock.Any(), gomock.Any()).Return(false, nil)
+	mockRepo.EXPECT().ListByCourtAndTimeRange(ctx, "court-1", gomock.Any(), gomock.Any()).Return([]entities.Reservation{}, nil)
 
-	s.mockRepo.EXPECT().Create(ctx, gomock.Any()).Return(nil).Times(2)
+	mockRepo.EXPECT().ListByCourtAndTimeRange(ctx, "court-2", gomock.Any(), gomock.Any()).Return([]entities.Reservation{}, nil)
+
+	mockRepo.EXPECT().Create(ctx, gomock.Any()).Return(nil).Times(2)
 
 	var wg sync.WaitGroup
-	results := make(chan error, 2)
+	results := make(chan error)
 
 	for i, courtID := range []string{"court-1", "court-2"} {
 		wg.Add(1)
@@ -193,13 +245,14 @@ func (s *ServiceSuite) TestReserveCourt_DifferentCourts() {
 				CreatedAt:    time.Now(),
 			}
 
-			err := s.service.ReserveCourt(ctx, cID, reservation)
-			results <- err
+			results <- service.ReserveCourt(ctx, cID, reservation)
 		}(i, courtID)
 	}
 
-	wg.Wait()
-	close(results)
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
 
 	for err := range results {
 		s.NoError(err)
@@ -209,6 +262,11 @@ func (s *ServiceSuite) TestReserveCourt_DifferentCourts() {
 func (s *ServiceSuite) TestReserveCourt_LockIsReleased() {
 	ctx := context.Background()
 	courtID := "court-1"
+
+	mockRepo := mocks.NewMockReservationsRepository(s.ctrl)
+	locker := reservation.NewLocalLocker()
+	logger := zerolog.New(os.Stdout).Level(zerolog.Disabled)
+	service := reservation.NewService(mockRepo, locker, logger)
 
 	reservation := entities.Reservation{
 		ID:           "reservation-1",
@@ -220,19 +278,19 @@ func (s *ServiceSuite) TestReserveCourt_LockIsReleased() {
 		CreatedAt:    time.Now(),
 	}
 
-	s.mockRepo.EXPECT().
-		HasOverlapping(ctx, courtID, reservation.ReservedFrom, reservation.ReservedTo).
-		Return(false, nil)
-	s.mockRepo.EXPECT().Create(ctx, &reservation).Return(fmt.Errorf("fail"))
+	mockRepo.EXPECT().
+		ListByCourtAndTimeRange(ctx, courtID, reservation.ReservedFrom, reservation.ReservedTo).
+		Return([]entities.Reservation{}, nil)
+	mockRepo.EXPECT().Create(ctx, &reservation).Return(fmt.Errorf("fail"))
 
-	err := s.service.ReserveCourt(ctx, courtID, reservation)
+	err := service.ReserveCourt(ctx, courtID, reservation)
 	s.Require().Error(err)
 
-	s.mockRepo.EXPECT().
-		HasOverlapping(ctx, courtID, reservation.ReservedFrom, reservation.ReservedTo).
-		Return(false, nil)
-	s.mockRepo.EXPECT().Create(ctx, &reservation).Return(nil)
+	mockRepo.EXPECT().
+		ListByCourtAndTimeRange(ctx, courtID, reservation.ReservedFrom, reservation.ReservedTo).
+		Return([]entities.Reservation{}, nil)
+	mockRepo.EXPECT().Create(ctx, &reservation).Return(nil)
 
-	err = s.service.ReserveCourt(ctx, courtID, reservation)
+	err = service.ReserveCourt(ctx, courtID, reservation)
 	s.NoError(err)
 }

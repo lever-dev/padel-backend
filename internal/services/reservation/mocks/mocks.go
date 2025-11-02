@@ -56,17 +56,17 @@ func (mr *MockReservationsRepositoryMockRecorder) Create(ctx, reservation any) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockReservationsRepository)(nil).Create), ctx, reservation)
 }
 
-// HasOverlapping mocks base method.
-func (m *MockReservationsRepository) HasOverlapping(ctx context.Context, courtID string, from, to time.Time) (bool, error) {
+// ListByCourtAndTimeRange mocks base method.
+func (m *MockReservationsRepository) ListByCourtAndTimeRange(ctx context.Context, courtID string, from, to time.Time) ([]entities.Reservation, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HasOverlapping", ctx, courtID, from, to)
-	ret0, _ := ret[0].(bool)
+	ret := m.ctrl.Call(m, "ListByCourtAndTimeRange", ctx, courtID, from, to)
+	ret0, _ := ret[0].([]entities.Reservation)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// HasOverlapping indicates an expected call of HasOverlapping.
-func (mr *MockReservationsRepositoryMockRecorder) HasOverlapping(ctx, courtID, from, to any) *gomock.Call {
+// ListByCourtAndTimeRange indicates an expected call of ListByCourtAndTimeRange.
+func (mr *MockReservationsRepositoryMockRecorder) ListByCourtAndTimeRange(ctx, courtID, from, to any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasOverlapping", reflect.TypeOf((*MockReservationsRepository)(nil).HasOverlapping), ctx, courtID, from, to)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByCourtAndTimeRange", reflect.TypeOf((*MockReservationsRepository)(nil).ListByCourtAndTimeRange), ctx, courtID, from, to)
 }

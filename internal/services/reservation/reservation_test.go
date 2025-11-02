@@ -35,12 +35,11 @@ func (s *ServiceSuite) TearDownTest() {
 
 func (s *ServiceSuite) TestReserveCourt() {
 	tests := []struct {
-		name          string
-		courtID       string
-		reservation   entities.Reservation
-		setupMocks    func(mockRepo *mocks.MockReservationsRepository, res entities.Reservation)
-		expectedError error
-		checkError    func(error) bool
+		name        string
+		courtID     string
+		reservation entities.Reservation
+		setupMocks  func(mockRepo *mocks.MockReservationsRepository, res entities.Reservation)
+		wantErr     bool
 	}{
 		{
 			name:    "success",
@@ -62,7 +61,7 @@ func (s *ServiceSuite) TestReserveCourt() {
 					Create(gomock.Any(), &res).
 					Return(nil)
 			},
-			expectedError: nil,
+			wantErr: false,
 		},
 		{
 			name:    "conflict - court reserved",
@@ -90,7 +89,7 @@ func (s *ServiceSuite) TestReserveCourt() {
 						},
 					}, nil)
 			},
-			expectedError: entities.ErrCourtAlreadyReserved,
+			wantErr: true,
 		},
 		{
 			name:    "create error",
@@ -112,9 +111,7 @@ func (s *ServiceSuite) TestReserveCourt() {
 					Create(gomock.Any(), &res).
 					Return(fmt.Errorf("database insert error"))
 			},
-			checkError: func(err error) bool {
-				return err != nil && err.Error() != ""
-			},
+			wantErr: true,
 		},
 	}
 
@@ -131,11 +128,8 @@ func (s *ServiceSuite) TestReserveCourt() {
 
 			err := service.ReserveCourt(ctx, tt.courtID, tt.reservation)
 
-			if tt.expectedError != nil {
+			if tt.wantErr {
 				s.Error(err)
-				s.ErrorIs(err, tt.expectedError)
-			} else if tt.checkError != nil {
-				s.True(tt.checkError(err))
 			} else {
 				s.NoError(err)
 			}

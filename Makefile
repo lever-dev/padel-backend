@@ -21,7 +21,7 @@ logs:
 .PHONY: fmt
 fmt:
 	@echo "🧹 Formatting Go code..."
-	@gofmt -s -w .
+	@gofmt -l -w `find . -type f -name '*.go' -not -path "./vendor/*"`
 	@golines --max-len=120 --base-formatter=gofmt --shorten-comments --ignore-generated  --ignored-dirs=vendor -w .
 	@echo "✅ Code formatted successfully"
 

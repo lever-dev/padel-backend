@@ -216,9 +216,13 @@ func (s *ServiceSuite) TestReserveCourt_DifferentCourts() {
 	locker := reservation.NewLocalLocker()
 	service := reservation.NewService(mockRepo, locker)
 
-	mockRepo.EXPECT().ListByCourtAndTimeRange(ctx, "court-1", gomock.Any(), gomock.Any()).Return([]entities.Reservation{}, nil)
+	mockRepo.EXPECT().
+		ListByCourtAndTimeRange(ctx, "court-1", gomock.Any(), gomock.Any()).
+		Return([]entities.Reservation{}, nil)
 
-	mockRepo.EXPECT().ListByCourtAndTimeRange(ctx, "court-2", gomock.Any(), gomock.Any()).Return([]entities.Reservation{}, nil)
+	mockRepo.EXPECT().
+		ListByCourtAndTimeRange(ctx, "court-2", gomock.Any(), gomock.Any()).
+		Return([]entities.Reservation{}, nil)
 
 	mockRepo.EXPECT().Create(ctx, gomock.Any()).Return(nil).Times(2)
 

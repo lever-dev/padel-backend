@@ -1,9 +1,19 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/lever-dev/padel-backend/internal/config"
+	httpPkg "github.com/lever-dev/padel-backend/internal/controllers/http"
+	reservationRepo "github.com/lever-dev/padel-backend/internal/repositories/reservation"
+	"github.com/lever-dev/padel-backend/internal/services/reservation"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -21,6 +31,55 @@ var serveCmd = &cobra.Command{
 		if err := initLogger(cfg); err != nil {
 			log.Fatal().Err(err).Msg("failed to init logger")
 		}
+
+		ctx := context.Background()
+
+		reservationRepo := reservationRepo.NewRepository(cfg.PostgresConnectionURL)
+
+		if err := reservationRepo.Connect(ctx); err != nil {
+			log.Fatal().Err(err).Msg("failed to connect to postgres")
+		}
+
+		reservationService := reservation.NewService(reservationRepo, reservation.NewLocalLocker())
+
+		reservationHandler := httpPkg.NewReservationHandler(reservationService)
+
+		handler := httpPkg.NewRouter(reservationHandler)
+
+		httpServer := http.Server{
+			Addr:              cfg.HTTPServerAddr,
+			Handler:           handler,
+			ReadHeaderTimeout: 5 * time.Second,
+		}
+
+		go func() {
+			log.Info().Msg("started http server")
+
+			if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				log.Fatal().Err(err).Msg("failed on listen and serve")
+			}
+		}()
+
+		// Graceful shutdown
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+
+		sig := <-sigCh
+
+		log.Info().Str("signal", sig.String()).Msg("application got signal")
+
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+
+		log.Info().Msg("closing all resources ...")
+
+		if err := httpServer.Shutdown(ctx); err != nil {
+			log.Fatal().Err(err).Msg("failed on shutdown server")
+		}
+
+		reservationRepo.Close()
+
+		log.Info().Msg("Bye Bye !")
 
 		return nil
 	},

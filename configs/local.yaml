@@ -1,1 +1,4 @@
 log_level: trace
+http_server_addr: ":8080"
+postgres:
+  connection_url: "postgres://test:test@localhost:5432/db0?sslmode=disable"

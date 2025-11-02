@@ -16,7 +16,9 @@ const (
 )
 
 type Config struct {
-	LogLevel string `mapstructure:"log_level"`
+	HTTPServerAddr        string `mapstructure:"http_server_addr"`
+	LogLevel              string `mapstructure:"log_level"`
+	PostgresConnectionURL string `mapstructure:"postgres.connection_url"`
 }
 
 func LoadConfig() (Config, error) {

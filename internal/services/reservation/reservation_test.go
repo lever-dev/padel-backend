@@ -3,7 +3,6 @@ package reservation_test
 import (
 	"context"
 	"fmt"
-	"os"
 	"sync"
 	"testing"
 	"time"
@@ -11,7 +10,6 @@ import (
 	"github.com/lever-dev/padel-backend/internal/entities"
 	"github.com/lever-dev/padel-backend/internal/services/reservation"
 	"github.com/lever-dev/padel-backend/internal/services/reservation/mocks"
-	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -121,8 +119,7 @@ func (s *ServiceSuite) TestReserveCourt() {
 
 			mockRepo := mocks.NewMockReservationsRepository(s.ctrl)
 			locker := reservation.NewLocalLocker()
-			logger := zerolog.New(os.Stdout).Level(zerolog.Disabled)
-			service := reservation.NewService(mockRepo, locker, logger)
+			service := reservation.NewService(mockRepo, locker)
 
 			tt.setupMocks(mockRepo, tt.reservation)
 
@@ -143,10 +140,11 @@ func (s *ServiceSuite) TestReserveCourt_ConcurrentReservations() {
 
 	mockRepo := mocks.NewMockReservationsRepository(s.ctrl)
 	locker := reservation.NewLocalLocker()
-	logger := zerolog.New(os.Stdout).Level(zerolog.Disabled)
-	service := reservation.NewService(mockRepo, locker, logger)
+	service := reservation.NewService(mockRepo, locker)
 
-	firstCall := mockRepo.EXPECT().ListByCourtAndTimeRange(ctx, courtID, gomock.Any(), gomock.Any()).Return([]entities.Reservation{}, nil)
+	firstCall := mockRepo.EXPECT().
+		ListByCourtAndTimeRange(ctx, courtID, gomock.Any(), gomock.Any()).
+		Return([]entities.Reservation{}, nil)
 
 	mockRepo.EXPECT().Create(ctx, gomock.Any()).Return(nil).Times(1).After(firstCall)
 
@@ -165,14 +163,17 @@ func (s *ServiceSuite) TestReserveCourt_ConcurrentReservations() {
 		AnyTimes().
 		After(firstCall)
 
-	var wg sync.WaitGroup
-	results := make(chan error)
+	var (
+		wg      sync.WaitGroup
+		results = make(chan error)
 
-	for i := 0; i < 2; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wantSuccess = 1
+		wantErrors  = 100
+		total       = wantSuccess + wantErrors
+	)
 
+	for range total {
+		wg.Go(func() {
 			reservation := entities.Reservation{
 				ID:           "reservation-1",
 				CourtID:      courtID,
@@ -184,7 +185,7 @@ func (s *ServiceSuite) TestReserveCourt_ConcurrentReservations() {
 			}
 
 			results <- service.ReserveCourt(ctx, courtID, reservation)
-		}()
+		})
 	}
 
 	go func() {
@@ -200,11 +201,12 @@ func (s *ServiceSuite) TestReserveCourt_ConcurrentReservations() {
 			errorCount++
 			continue
 		}
+
 		successCount++
 	}
 
-	s.Equal(1, successCount)
-	s.Equal(1, errorCount)
+	s.Equal(wantSuccess, successCount)
+	s.Equal(wantErrors, errorCount)
 }
 
 func (s *ServiceSuite) TestReserveCourt_DifferentCourts() {
@@ -212,8 +214,7 @@ func (s *ServiceSuite) TestReserveCourt_DifferentCourts() {
 
 	mockRepo := mocks.NewMockReservationsRepository(s.ctrl)
 	locker := reservation.NewLocalLocker()
-	logger := zerolog.New(os.Stdout).Level(zerolog.Disabled)
-	service := reservation.NewService(mockRepo, locker, logger)
+	service := reservation.NewService(mockRepo, locker)
 
 	mockRepo.EXPECT().ListByCourtAndTimeRange(ctx, "court-1", gomock.Any(), gomock.Any()).Return([]entities.Reservation{}, nil)
 
@@ -259,8 +260,7 @@ func (s *ServiceSuite) TestReserveCourt_LockIsReleased() {
 
 	mockRepo := mocks.NewMockReservationsRepository(s.ctrl)
 	locker := reservation.NewLocalLocker()
-	logger := zerolog.New(os.Stdout).Level(zerolog.Disabled)
-	service := reservation.NewService(mockRepo, locker, logger)
+	service := reservation.NewService(mockRepo, locker)
 
 	reservation := entities.Reservation{
 		ID:           "reservation-1",

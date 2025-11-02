@@ -6,20 +6,18 @@ import (
 	"time"
 
 	"github.com/lever-dev/padel-backend/internal/entities"
-	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 type Service struct {
 	reservationsRepo ReservationsRepository
 	locker           Locker
-	logger           zerolog.Logger
 }
 
-func NewService(repo ReservationsRepository, locker Locker, logger zerolog.Logger) *Service {
+func NewService(repo ReservationsRepository, locker Locker) *Service {
 	return &Service{
 		reservationsRepo: repo,
 		locker:           locker,
-		logger:           logger,
 	}
 }
 
@@ -30,7 +28,7 @@ func (s *Service) ReserveCourt(ctx context.Context, courtID string, reservation 
 
 	defer func() {
 		if err := s.locker.Unlock(ctx, courtID); err != nil {
-			s.logger.Error().Err(err).Str("court_id", courtID).Msg("failed to unlock court")
+			log.Error().Err(err).Str("court_id", courtID).Msg("failed to unlock court")
 		}
 	}()
 

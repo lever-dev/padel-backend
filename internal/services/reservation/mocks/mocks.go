@@ -12,6 +12,7 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	entities "github.com/lever-dev/padel-backend/internal/entities"
 	gomock "go.uber.org/mock/gomock"
@@ -53,4 +54,19 @@ func (m *MockReservationsRepository) Create(ctx context.Context, reservation *en
 func (mr *MockReservationsRepositoryMockRecorder) Create(ctx, reservation any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockReservationsRepository)(nil).Create), ctx, reservation)
+}
+
+// ListByCourtAndTimeRange mocks base method.
+func (m *MockReservationsRepository) ListByCourtAndTimeRange(ctx context.Context, courtID string, from, to time.Time) ([]entities.Reservation, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListByCourtAndTimeRange", ctx, courtID, from, to)
+	ret0, _ := ret[0].([]entities.Reservation)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListByCourtAndTimeRange indicates an expected call of ListByCourtAndTimeRange.
+func (mr *MockReservationsRepositoryMockRecorder) ListByCourtAndTimeRange(ctx, courtID, from, to any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByCourtAndTimeRange", reflect.TypeOf((*MockReservationsRepository)(nil).ListByCourtAndTimeRange), ctx, courtID, from, to)
 }

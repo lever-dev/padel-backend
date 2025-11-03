@@ -1,3 +1,7 @@
+.PHONY: docs
+docs:
+	swag init -g ./cmd/main.go -o=./docs --generatedTime=false --parseDependency --parseInternal
+
 .PHONY: run_containers
 run_containers:
 	docker compose -f ./deployments/docker-compose.yml up -d

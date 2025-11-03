@@ -1,0 +1,68 @@
+definitions:
+  http.ErrorResponse:
+    properties:
+      message:
+        description: Message provides a human-readable description of the error.
+        example: invalid JSON body
+        type: string
+    type: object
+  http.ReserveCourtRequest:
+    properties:
+      endTime:
+        description: |-
+          EndTime is the reservation end timestamp in RFC3339 format
+          example: 2025-11-04T19:45Z
+          format: date-time
+        example: 2025-11-04T19:45Z
+        format: date-time
+        type: string
+      startTime:
+        description: |-
+          StartTime is the reservation start timestamp in RFC3339 format
+          example: 2025-11-04T18:30Z
+          format: date-time
+        example: 2025-11-04T18:30Z
+        format: date-time
+        type: string
+    type: object
+info:
+  contact: {}
+  description: API documentation for the Padel Backend service.
+  title: Padel Backend API
+  version: "1.0"
+paths:
+  /v1/reservations/{orgID}/courts/{courtID}:
+    post:
+      consumes:
+      - application/json
+      description: Creates a reservation for the specified organization and court.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Court ID
+        in: path
+        name: courtID
+        required: true
+        type: string
+      - description: Reservation payload
+        in: body
+        name: reservation
+        required: true
+        schema:
+          $ref: '#/definitions/http.ReserveCourtRequest'
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+      summary: Reserve a court
+      tags:
+      - reservations
+swagger: "2.0"

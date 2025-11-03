@@ -21,7 +21,7 @@ func NewService(repo ReservationsRepository, locker Locker) *Service {
 	}
 }
 
-func (s *Service) ReserveCourt(ctx context.Context, courtID string, reservation entities.Reservation) error {
+func (s *Service) ReserveCourt(ctx context.Context, courtID string, reservation *entities.Reservation) error {
 	if err := s.locker.Lock(ctx, courtID); err != nil {
 		return fmt.Errorf("failed to lock court: %w", err)
 	}
@@ -46,7 +46,7 @@ func (s *Service) ReserveCourt(ctx context.Context, courtID string, reservation 
 		return entities.ErrCourtAlreadyReserved
 	}
 
-	return s.reservationsRepo.Create(ctx, &reservation)
+	return s.reservationsRepo.Create(ctx, reservation)
 }
 
 func (s *Service) ListReservations(

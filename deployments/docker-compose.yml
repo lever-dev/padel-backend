@@ -39,5 +39,6 @@ services:
         condition: service_completed_successfully
     environment:
       APP_ENV: "smoke"
+      POSTGRES_CONNECTION_URL: "postgres://test:test@postgres:5432/db0?sslmode=disable"
     command: ["go", "test", "-v", "./..."]
     profiles: ["tests"]

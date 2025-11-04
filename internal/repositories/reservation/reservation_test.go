@@ -2,10 +2,10 @@ package reservation_test
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
@@ -24,7 +24,7 @@ func TestRepositorySuite(t *testing.T) {
 }
 
 func (s *repositorySuite) SetupTest() {
-	connString := viper.GetString("postgres.connection_url")
+	connString := os.Getenv("POSTGRES_CONNECTION_URL")
 
 	repo := reservation.NewRepository(connString)
 

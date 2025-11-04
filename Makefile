@@ -16,7 +16,7 @@ run_server:
 
 .PHONY: tests
 tests:
-	docker compose -f deployments/docker-compose.yml --profile tests up --build tests
+	docker compose -f deployments/docker-compose.yml --profile tests up --build tests --exit-code-from tests
 
 .PHONY: logs
 logs:

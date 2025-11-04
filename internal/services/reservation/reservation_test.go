@@ -56,7 +56,7 @@ func (s *ServiceSuite) TestReserveCourt() {
 					ListByCourtAndTimeRange(gomock.Any(), "court-1", res.ReservedFrom, res.ReservedTo).
 					Return([]entities.Reservation{}, nil)
 				mockRepo.EXPECT().
-					Create(gomock.Any(), &res).
+					Create(gomock.Any(), res).
 					Return(nil)
 			},
 			wantErr: false,
@@ -106,7 +106,7 @@ func (s *ServiceSuite) TestReserveCourt() {
 					ListByCourtAndTimeRange(gomock.Any(), "court-1", res.ReservedFrom, res.ReservedTo).
 					Return([]entities.Reservation{}, nil)
 				mockRepo.EXPECT().
-					Create(gomock.Any(), &res).
+					Create(gomock.Any(), res).
 					Return(fmt.Errorf("database insert error"))
 			},
 			wantErr: true,
@@ -279,7 +279,7 @@ func (s *ServiceSuite) TestReserveCourt_LockIsReleased() {
 	mockRepo.EXPECT().
 		ListByCourtAndTimeRange(ctx, courtID, reservation.ReservedFrom, reservation.ReservedTo).
 		Return([]entities.Reservation{}, nil)
-	mockRepo.EXPECT().Create(ctx, &reservation).Return(fmt.Errorf("fail"))
+	mockRepo.EXPECT().Create(ctx, reservation).Return(fmt.Errorf("fail"))
 
 	err := service.ReserveCourt(ctx, courtID, reservation)
 	s.Require().Error(err)
@@ -287,7 +287,7 @@ func (s *ServiceSuite) TestReserveCourt_LockIsReleased() {
 	mockRepo.EXPECT().
 		ListByCourtAndTimeRange(ctx, courtID, reservation.ReservedFrom, reservation.ReservedTo).
 		Return([]entities.Reservation{}, nil)
-	mockRepo.EXPECT().Create(ctx, &reservation).Return(nil)
+	mockRepo.EXPECT().Create(ctx, reservation).Return(nil)
 
 	err = service.ReserveCourt(ctx, courtID, reservation)
 	s.NoError(err)

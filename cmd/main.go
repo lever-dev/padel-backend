@@ -13,6 +13,9 @@ var rootCmd = &cobra.Command{
 	Long:  "Padel Backend API server",
 }
 
+// @title Padel Backend API
+// @version 1.0
+// @description API documentation for the Padel Backend service.
 func main() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)

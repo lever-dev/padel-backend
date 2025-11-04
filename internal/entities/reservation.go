@@ -22,3 +22,13 @@ type Reservation struct {
 
 	CreatedAt time.Time
 }
+
+func NewReservation(courtID string, from, to time.Time, reservedBy string) *Reservation {
+	return &Reservation{
+		CourtID:      courtID,
+		ReservedFrom: from,
+		ReservedTo:   to,
+		ReservedBy:   reservedBy,
+		CreatedAt:    time.Now(),
+	}
+}

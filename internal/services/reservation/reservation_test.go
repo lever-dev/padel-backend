@@ -35,14 +35,14 @@ func (s *ServiceSuite) TestReserveCourt() {
 	tests := []struct {
 		name        string
 		courtID     string
-		reservation entities.Reservation
-		setupMocks  func(mockRepo *mocks.MockReservationsRepository, res entities.Reservation)
+		reservation *entities.Reservation
+		setupMocks  func(mockRepo *mocks.MockReservationsRepository, res *entities.Reservation)
 		wantErr     bool
 	}{
 		{
 			name:    "success",
 			courtID: "court-1",
-			reservation: entities.Reservation{
+			reservation: &entities.Reservation{
 				ID:           "reservation-1",
 				CourtID:      "court-1",
 				ReservedBy:   "user-1",
@@ -51,7 +51,7 @@ func (s *ServiceSuite) TestReserveCourt() {
 				ReservedTo:   time.Now().Add(2 * time.Hour),
 				CreatedAt:    time.Now(),
 			},
-			setupMocks: func(mockRepo *mocks.MockReservationsRepository, res entities.Reservation) {
+			setupMocks: func(mockRepo *mocks.MockReservationsRepository, res *entities.Reservation) {
 				mockRepo.EXPECT().
 					ListByCourtAndTimeRange(gomock.Any(), "court-1", res.ReservedFrom, res.ReservedTo).
 					Return([]entities.Reservation{}, nil)
@@ -64,7 +64,7 @@ func (s *ServiceSuite) TestReserveCourt() {
 		{
 			name:    "conflict - court reserved",
 			courtID: "court-1",
-			reservation: entities.Reservation{
+			reservation: &entities.Reservation{
 				ID:           "reservation-2",
 				CourtID:      "court-1",
 				ReservedBy:   "user-2",
@@ -73,7 +73,7 @@ func (s *ServiceSuite) TestReserveCourt() {
 				ReservedTo:   time.Now().Add(2 * time.Hour),
 				CreatedAt:    time.Now(),
 			},
-			setupMocks: func(mockRepo *mocks.MockReservationsRepository, res entities.Reservation) {
+			setupMocks: func(mockRepo *mocks.MockReservationsRepository, res *entities.Reservation) {
 				mockRepo.EXPECT().
 					ListByCourtAndTimeRange(gomock.Any(), "court-1", res.ReservedFrom, res.ReservedTo).
 					Return([]entities.Reservation{
@@ -92,7 +92,7 @@ func (s *ServiceSuite) TestReserveCourt() {
 		{
 			name:    "create error",
 			courtID: "court-1",
-			reservation: entities.Reservation{
+			reservation: &entities.Reservation{
 				ID:           "reservation-3",
 				CourtID:      "court-1",
 				ReservedBy:   "user-3",
@@ -101,7 +101,7 @@ func (s *ServiceSuite) TestReserveCourt() {
 				ReservedTo:   time.Now().Add(2 * time.Hour),
 				CreatedAt:    time.Now(),
 			},
-			setupMocks: func(mockRepo *mocks.MockReservationsRepository, res entities.Reservation) {
+			setupMocks: func(mockRepo *mocks.MockReservationsRepository, res *entities.Reservation) {
 				mockRepo.EXPECT().
 					ListByCourtAndTimeRange(gomock.Any(), "court-1", res.ReservedFrom, res.ReservedTo).
 					Return([]entities.Reservation{}, nil)
@@ -174,7 +174,7 @@ func (s *ServiceSuite) TestReserveCourt_ConcurrentReservations() {
 
 	for range total {
 		wg.Go(func() {
-			reservation := entities.Reservation{
+			reservation := &entities.Reservation{
 				ID:           "reservation-1",
 				CourtID:      courtID,
 				ReservedBy:   "user-1",
@@ -234,7 +234,7 @@ func (s *ServiceSuite) TestReserveCourt_DifferentCourts() {
 		go func(id int, cID string) {
 			defer wg.Done()
 
-			reservation := entities.Reservation{
+			reservation := &entities.Reservation{
 				ID:           "reservation-1",
 				CourtID:      cID,
 				ReservedBy:   "user-1",
@@ -266,7 +266,7 @@ func (s *ServiceSuite) TestReserveCourt_LockIsReleased() {
 	locker := reservation.NewLocalLocker()
 	service := reservation.NewService(mockRepo, locker)
 
-	reservation := entities.Reservation{
+	reservation := &entities.Reservation{
 		ID:           "reservation-1",
 		CourtID:      courtID,
 		ReservedBy:   "user-1",

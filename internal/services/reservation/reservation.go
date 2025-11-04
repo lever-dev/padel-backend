@@ -2,11 +2,11 @@ package reservation
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"time"
-
 	"github.com/lever-dev/padel-backend/internal/entities"
 	"github.com/rs/zerolog/log"
+	"time"
 )
 
 type Service struct {
@@ -59,9 +59,24 @@ func (s *Service) ListReservations(
 
 func (s *Service) CancelReservation(
 	ctx context.Context,
-	courtID string,
-	reservation entities.Reservation,
+	reservationID string,
 	cancelledBy string,
-) ([]entities.Reservation, error) {
-	return nil, nil
+) error {
+	reservation, err := s.reservationsRepo.GetByID(ctx, reservationID)
+	if err != nil {
+		if errors.Is(err, entities.ErrNotFound) {
+			return entities.ErrNotFound
+		}
+		return fmt.Errorf("failed to get reservation: %w", err)
+	}
+
+	if reservation.Status == entities.CancelledReservationStatus {
+		return fmt.Errorf("reservation already cancelled")
+	}
+
+	if err := s.reservationsRepo.CancelReservation(ctx, reservationID, cancelledBy); err != nil {
+		return fmt.Errorf("failed to cancel reservation: %w", err)
+	}
+
+	return nil
 }

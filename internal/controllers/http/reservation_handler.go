@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 
 type ReservationService interface {
 	ReserveCourt(ctx context.Context, courtID string, reservation *entities.Reservation) error
+	CancelReservation(ctx context.Context, reservationID string, cancelledBy string) error
 }
 
 type ReservationHandler struct {
@@ -96,6 +98,58 @@ func (h *ReservationHandler) ReserveCourt(w http.ResponseWriter, r *http.Request
 		Time("start time", req.StartTime).
 		Time("end time", req.EndTime).
 		Msg("court was reserved")
+}
+
+type CancelReservationRequest struct {
+	CancelledBy string `json:"cancelled_by"`
+}
+
+type CancelReservationResponse struct {
+	Message string `json:"message"`
+	Status  string `json:"status"`
+}
+
+func (h *ReservationHandler) CancelReservation(w http.ResponseWriter, r *http.Request) {
+	reservationID := chi.URLParam(r, "reservationID")
+	if reservationID == "" {
+		http.Error(w, "reservation ID is required", http.StatusBadRequest)
+		return
+	}
+
+	var req CancelReservationRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Error().Err(err).Msg("failed to decode request body")
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if req.CancelledBy == "" {
+		http.Error(w, "cancelled_by is required", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.rsvService.CancelReservation(r.Context(), reservationID, req.CancelledBy); err != nil {
+		if errors.Is(err, entities.ErrNotFound) {
+			http.Error(w, "reservation not found", http.StatusNotFound)
+			return
+		}
+
+		log.Error().Err(err).
+			Str("reservation_id", reservationID).
+			Msg("failed to cancel reservation")
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	resp := CancelReservationResponse{
+		Message: "Reservation cancelled successfully",
+		Status:  "cancelled",
+	}
+
+	h.sendJSONResponse(w, http.StatusOK, resp)
 }
 
 // TODO: move to pkg library

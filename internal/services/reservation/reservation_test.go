@@ -299,10 +299,9 @@ func (s *ServiceSuite) TestCancelReservation() {
 	cancelledBy := "user-123"
 
 	tests := []struct {
-		name        string
-		setupMocks  func(mockRepo *mocks.MockReservationsRepository)
-		wantErr     bool
-		errContains string
+		name       string
+		setupMocks func(mockRepo *mocks.MockReservationsRepository)
+		wantErr    bool
 	}{
 		{
 			name: "success",
@@ -340,8 +339,7 @@ func (s *ServiceSuite) TestCancelReservation() {
 						Status: entities.CancelledReservationStatus,
 					}, nil)
 			},
-			wantErr:     true,
-			errContains: "already cancelled",
+			wantErr: false,
 		},
 	}
 
@@ -357,9 +355,6 @@ func (s *ServiceSuite) TestCancelReservation() {
 
 			if tt.wantErr {
 				s.Error(err)
-				if tt.errContains != "" {
-					s.Contains(err.Error(), tt.errContains)
-				}
 			} else {
 				s.NoError(err)
 			}

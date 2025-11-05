@@ -101,7 +101,7 @@ func (h *ReservationHandler) ReserveCourt(w http.ResponseWriter, r *http.Request
 }
 
 type CancelReservationRequest struct {
-	CancelledBy string `json:"cancelled_by"`
+	CancelledBy string `json:"cancelledBy"`
 }
 
 type CancelReservationResponse struct {
@@ -141,15 +141,8 @@ func (h *ReservationHandler) CancelReservation(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	resp := CancelReservationResponse{
-		Message: "Reservation cancelled successfully",
-		Status:  "cancelled",
-	}
-
-	h.sendJSONResponse(w, http.StatusOK, resp)
 }
 
 // TODO: move to pkg library

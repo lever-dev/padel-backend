@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/lever-dev/padel-backend/internal/entities"
 	"github.com/rs/zerolog/log"
-	"time"
 )
 
 type Service struct {
@@ -67,15 +68,15 @@ func (s *Service) CancelReservation(
 		if errors.Is(err, entities.ErrNotFound) {
 			return entities.ErrNotFound
 		}
-		return fmt.Errorf("failed to get reservation: %w", err)
+		return fmt.Errorf("get reservation by id: %w", err)
 	}
 
 	if reservation.Status == entities.CancelledReservationStatus {
-		return fmt.Errorf("reservation already cancelled")
+		return nil
 	}
 
 	if err := s.reservationsRepo.CancelReservation(ctx, reservationID, cancelledBy); err != nil {
-		return fmt.Errorf("failed to cancel reservation: %w", err)
+		return fmt.Errorf("cancel reservation: %w", err)
 	}
 
 	return nil

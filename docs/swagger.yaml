@@ -1,4 +1,12 @@
 definitions:
+  http.CancelReservationRequest:
+    properties:
+      cancelledBy:
+        description: |-
+          CancelledBy is the ID or name of the user performing the cancellation
+          example: "user_123"
+        type: string
+    type: object
   http.ErrorResponse:
     properties:
       message:
@@ -62,7 +70,44 @@ paths:
             $ref: '#/definitions/http.ErrorResponse'
         "500":
           description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
       summary: Reserve a court
+      tags:
+      - reservations
+  /v1/reservations/{reservationID}:
+    delete:
+      consumes:
+      - application/json
+      description: Cancels the reservation with the specified ID.
+      parameters:
+      - description: Reservation ID
+        in: path
+        name: reservationID
+        required: true
+        type: string
+      - description: Cancellation payload
+        in: body
+        name: cancel
+        required: true
+        schema:
+          $ref: '#/definitions/http.CancelReservationRequest'
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      summary: Cancel a reservation
       tags:
       - reservations
 swagger: "2.0"

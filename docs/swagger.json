@@ -53,13 +53,78 @@
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error"
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/reservations/{reservationID}": {
+            "delete": {
+                "description": "Cancels the reservation with the specified ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reservations"
+                ],
+                "summary": "Cancel a reservation",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Reservation ID",
+                        "name": "reservationID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Cancellation payload",
+                        "name": "cancel",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/http.CancelReservationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
                     }
                 }
             }
         }
     },
     "definitions": {
+        "http.CancelReservationRequest": {
+            "type": "object",
+            "properties": {
+                "cancelledBy": {
+                    "description": "CancelledBy is the ID or name of the user performing the cancellation\nexample: \"user_123\"",
+                    "type": "string"
+                }
+            }
+        },
         "http.ErrorResponse": {
             "type": "object",
             "properties": {

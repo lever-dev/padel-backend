@@ -59,7 +59,7 @@ type ErrorResponse struct {
 // @Param reservation body ReserveCourtRequest true "Reservation payload"
 // @Success 200
 // @Failure 400 {object} ErrorResponse
-// @Failure 500
+// @Failure 500 {object} ErrorResponse
 // @Router /v1/reservations/{orgID}/courts/{courtID} [post]
 func (h *ReservationHandler) ReserveCourt(w http.ResponseWriter, r *http.Request) {
 	orgID := chi.URLParam(r, "orgID")
@@ -100,15 +100,26 @@ func (h *ReservationHandler) ReserveCourt(w http.ResponseWriter, r *http.Request
 		Msg("court was reserved")
 }
 
+// CancelReservationRequest represents the payload for cancelling a reservation
+// swagger:model CancelReservationRequest
 type CancelReservationRequest struct {
+	// CancelledBy is the ID or name of the user performing the cancellation
+	// example: "user_123"
 	CancelledBy string `json:"cancelledBy"`
 }
 
-type CancelReservationResponse struct {
-	Message string `json:"message"`
-	Status  string `json:"status"`
-}
-
+// CancelReservation godoc
+// @Summary Cancel a reservation
+// @Description Cancels the reservation with the specified ID.
+// @Tags reservations
+// @Param reservationID path string true "Reservation ID"
+// @Accept json
+// @Param cancel body CancelReservationRequest true "Cancellation payload"
+// @Success 200
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /v1/reservations/{reservationID} [delete]
 func (h *ReservationHandler) CancelReservation(w http.ResponseWriter, r *http.Request) {
 	reservationID := chi.URLParam(r, "reservationID")
 	if reservationID == "" {

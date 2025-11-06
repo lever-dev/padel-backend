@@ -2,6 +2,7 @@ package reservation_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"testing"
@@ -292,7 +293,6 @@ func (s *ServiceSuite) TestReserveCourt_LockIsReleased() {
 	err = service.ReserveCourt(ctx, courtID, reservation)
 	s.NoError(err)
 }
-
 func (s *ServiceSuite) TestCancelReservation() {
 	ctx := context.Background()
 	reservationID := "reservation-1"
@@ -301,45 +301,34 @@ func (s *ServiceSuite) TestCancelReservation() {
 	tests := []struct {
 		name       string
 		setupMocks func(mockRepo *mocks.MockReservationsRepository)
-		wantErr    bool
+		wantErr    error
 	}{
 		{
 			name: "success",
 			setupMocks: func(mockRepo *mocks.MockReservationsRepository) {
 				mockRepo.EXPECT().
-					GetByID(ctx, reservationID).
-					Return(&entities.Reservation{
-						ID:      reservationID,
-						CourtID: "court-1",
-						Status:  entities.ReservedReservationStatus,
-					}, nil)
-
-				mockRepo.EXPECT().
 					CancelReservation(ctx, reservationID, cancelledBy).
 					Return(nil)
 			},
-			wantErr: false,
+			wantErr: nil,
 		},
 		{
 			name: "reservation not found",
 			setupMocks: func(mockRepo *mocks.MockReservationsRepository) {
 				mockRepo.EXPECT().
-					GetByID(ctx, reservationID).
-					Return(nil, entities.ErrNotFound)
+					CancelReservation(ctx, reservationID, cancelledBy).
+					Return(entities.ErrNotFound)
 			},
-			wantErr: true,
+			wantErr: entities.ErrNotFound,
 		},
 		{
-			name: "already cancelled",
+			name: "internal error",
 			setupMocks: func(mockRepo *mocks.MockReservationsRepository) {
 				mockRepo.EXPECT().
-					GetByID(ctx, reservationID).
-					Return(&entities.Reservation{
-						ID:     reservationID,
-						Status: entities.CancelledReservationStatus,
-					}, nil)
+					CancelReservation(ctx, reservationID, cancelledBy).
+					Return(fmt.Errorf("db error"))
 			},
-			wantErr: false,
+			wantErr: fmt.Errorf("db error"),
 		},
 	}
 
@@ -353,8 +342,11 @@ func (s *ServiceSuite) TestCancelReservation() {
 
 			err := service.CancelReservation(ctx, reservationID, cancelledBy)
 
-			if tt.wantErr {
+			if tt.wantErr != nil {
 				s.Error(err)
+				if errors.Is(tt.wantErr, entities.ErrNotFound) {
+					s.ErrorIs(err, entities.ErrNotFound)
+				}
 			} else {
 				s.NoError(err)
 			}

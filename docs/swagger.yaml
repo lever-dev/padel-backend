@@ -70,8 +70,6 @@ paths:
             $ref: '#/definitions/http.ErrorResponse'
         "500":
           description: Internal Server Error
-          schema:
-            $ref: '#/definitions/http.ErrorResponse'
       summary: Reserve a court
       tags:
       - reservations
@@ -105,8 +103,6 @@ paths:
             $ref: '#/definitions/http.ErrorResponse'
         "500":
           description: Internal Server Error
-          schema:
-            $ref: '#/definitions/http.ErrorResponse'
       summary: Cancel a reservation
       tags:
       - reservations

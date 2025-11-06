@@ -59,7 +59,7 @@ type ErrorResponse struct {
 // @Param reservation body ReserveCourtRequest true "Reservation payload"
 // @Success 200
 // @Failure 400 {object} ErrorResponse
-// @Failure 500 {object} ErrorResponse
+// @Failure 500
 // @Router /v1/reservations/{orgID}/courts/{courtID} [post]
 func (h *ReservationHandler) ReserveCourt(w http.ResponseWriter, r *http.Request) {
 	orgID := chi.URLParam(r, "orgID")
@@ -118,7 +118,7 @@ type CancelReservationRequest struct {
 // @Success 200
 // @Failure 400 {object} ErrorResponse
 // @Failure 404 {object} ErrorResponse
-// @Failure 500 {object} ErrorResponse
+// @Failure 500
 // @Router /v1/reservations/{reservationID} [delete]
 func (h *ReservationHandler) CancelReservation(w http.ResponseWriter, r *http.Request) {
 	reservationID := chi.URLParam(r, "reservationID")

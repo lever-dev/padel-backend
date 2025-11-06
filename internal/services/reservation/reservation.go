@@ -59,9 +59,12 @@ func (s *Service) ListReservations(
 
 func (s *Service) CancelReservation(
 	ctx context.Context,
-	courtID string,
-	reservation entities.Reservation,
+	reservationID string,
 	cancelledBy string,
-) ([]entities.Reservation, error) {
-	return nil, nil
+) error {
+	if err := s.reservationsRepo.CancelReservation(ctx, reservationID, cancelledBy); err != nil {
+		return fmt.Errorf("cancel reservation: %w", err)
+	}
+
+	return nil
 }

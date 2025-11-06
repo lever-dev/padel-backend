@@ -2,16 +2,17 @@ package reservation_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
 	"github.com/lever-dev/padel-backend/internal/entities"
 	"github.com/lever-dev/padel-backend/internal/services/reservation"
 	"github.com/lever-dev/padel-backend/internal/services/reservation/mocks"
 	"github.com/stretchr/testify/suite"
-	"go.uber.org/mock/gomock"
 )
 
 type ServiceSuite struct {
@@ -291,4 +292,64 @@ func (s *ServiceSuite) TestReserveCourt_LockIsReleased() {
 
 	err = service.ReserveCourt(ctx, courtID, reservation)
 	s.NoError(err)
+}
+func (s *ServiceSuite) TestCancelReservation() {
+	ctx := context.Background()
+	reservationID := "reservation-1"
+	cancelledBy := "user-123"
+
+	tests := []struct {
+		name       string
+		setupMocks func(mockRepo *mocks.MockReservationsRepository)
+		wantErr    error
+	}{
+		{
+			name: "success",
+			setupMocks: func(mockRepo *mocks.MockReservationsRepository) {
+				mockRepo.EXPECT().
+					CancelReservation(ctx, reservationID, cancelledBy).
+					Return(nil)
+			},
+			wantErr: nil,
+		},
+		{
+			name: "reservation not found",
+			setupMocks: func(mockRepo *mocks.MockReservationsRepository) {
+				mockRepo.EXPECT().
+					CancelReservation(ctx, reservationID, cancelledBy).
+					Return(entities.ErrNotFound)
+			},
+			wantErr: entities.ErrNotFound,
+		},
+		{
+			name: "internal error",
+			setupMocks: func(mockRepo *mocks.MockReservationsRepository) {
+				mockRepo.EXPECT().
+					CancelReservation(ctx, reservationID, cancelledBy).
+					Return(fmt.Errorf("db error"))
+			},
+			wantErr: fmt.Errorf("db error"),
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			mockRepo := mocks.NewMockReservationsRepository(s.ctrl)
+			locker := reservation.NewLocalLocker()
+			service := reservation.NewService(mockRepo, locker)
+
+			tt.setupMocks(mockRepo)
+
+			err := service.CancelReservation(ctx, reservationID, cancelledBy)
+
+			if tt.wantErr != nil {
+				s.Error(err)
+				if errors.Is(tt.wantErr, entities.ErrNotFound) {
+					s.ErrorIs(err, entities.ErrNotFound)
+				}
+			} else {
+				s.NoError(err)
+			}
+		})
+	}
 }

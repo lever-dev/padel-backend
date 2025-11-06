@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 
 type ReservationService interface {
 	ReserveCourt(ctx context.Context, courtID string, reservation *entities.Reservation) error
+	CancelReservation(ctx context.Context, reservationID string, cancelledBy string) error
 }
 
 type ReservationHandler struct {
@@ -96,6 +98,62 @@ func (h *ReservationHandler) ReserveCourt(w http.ResponseWriter, r *http.Request
 		Time("start time", req.StartTime).
 		Time("end time", req.EndTime).
 		Msg("court was reserved")
+}
+
+// CancelReservationRequest represents the payload for cancelling a reservation
+// swagger:model CancelReservationRequest
+type CancelReservationRequest struct {
+	// CancelledBy is the ID or name of the user performing the cancellation
+	// example: "user_123"
+	CancelledBy string `json:"cancelledBy"`
+}
+
+// CancelReservation godoc
+// @Summary Cancel a reservation
+// @Description Cancels the reservation with the specified ID.
+// @Tags reservations
+// @Param reservationID path string true "Reservation ID"
+// @Accept json
+// @Param cancel body CancelReservationRequest true "Cancellation payload"
+// @Success 200
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500
+// @Router /v1/reservations/{reservationID} [delete]
+func (h *ReservationHandler) CancelReservation(w http.ResponseWriter, r *http.Request) {
+	reservationID := chi.URLParam(r, "reservationID")
+	if reservationID == "" {
+		http.Error(w, "reservation ID is required", http.StatusBadRequest)
+		return
+	}
+
+	var req CancelReservationRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Error().Err(err).Msg("failed to decode request body")
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if req.CancelledBy == "" {
+		http.Error(w, "cancelled_by is required", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.rsvService.CancelReservation(r.Context(), reservationID, req.CancelledBy); err != nil {
+		if errors.Is(err, entities.ErrNotFound) {
+			http.Error(w, "reservation not found", http.StatusNotFound)
+			return
+		}
+
+		log.Error().Err(err).
+			Str("reservation_id", reservationID).
+			Msg("failed to cancel reservation")
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
 }
 
 // TODO: move to pkg library

@@ -138,6 +138,8 @@ func (s *ServiceSuite) TestReserveCourt() {
 func (s *ServiceSuite) TestReserveCourt_ConcurrentReservations() {
 	ctx := context.Background()
 	courtID := "court-1"
+	reservedFrom := time.Now().Add(1 * time.Hour)
+	reservedTo := time.Now().Add(2 * time.Hour)
 
 	mockRepo := mocks.NewMockReservationsRepository(s.ctrl)
 	locker := reservation.NewLocalLocker()
@@ -157,8 +159,8 @@ func (s *ServiceSuite) TestReserveCourt_ConcurrentReservations() {
 				CourtID:      courtID,
 				ReservedBy:   "user-1",
 				Status:       entities.ReservedReservationStatus,
-				ReservedFrom: time.Now().Add(1 * time.Hour),
-				ReservedTo:   time.Now().Add(2 * time.Hour),
+				ReservedFrom: reservedFrom,
+				ReservedTo:   reservedTo,
 			},
 		}, nil).
 		AnyTimes().
@@ -180,8 +182,8 @@ func (s *ServiceSuite) TestReserveCourt_ConcurrentReservations() {
 				CourtID:      courtID,
 				ReservedBy:   "user-1",
 				Status:       entities.PendingReservationStatus,
-				ReservedFrom: time.Now().Add(1 * time.Hour),
-				ReservedTo:   time.Now().Add(2 * time.Hour),
+				ReservedFrom: reservedFrom,
+				ReservedTo:   reservedTo,
 				CreatedAt:    time.Now(),
 			}
 
@@ -293,6 +295,7 @@ func (s *ServiceSuite) TestReserveCourt_LockIsReleased() {
 	err = service.ReserveCourt(ctx, courtID, reservation)
 	s.NoError(err)
 }
+
 func (s *ServiceSuite) TestCancelReservation() {
 	ctx := context.Background()
 	reservationID := "reservation-1"
@@ -343,12 +346,101 @@ func (s *ServiceSuite) TestCancelReservation() {
 			err := service.CancelReservation(ctx, reservationID, cancelledBy)
 
 			if tt.wantErr != nil {
-				s.Error(err)
+				s.Require().Error(err)
 				if errors.Is(tt.wantErr, entities.ErrNotFound) {
 					s.ErrorIs(err, entities.ErrNotFound)
+				} else {
+					s.Contains(err.Error(), "cancel reservation")
 				}
 			} else {
 				s.NoError(err)
+			}
+		})
+	}
+}
+
+func (s *ServiceSuite) TestGetListRevs() {
+	ctx := context.Background()
+	courtID := "court-1"
+	from := time.Now().Add(1 * time.Hour)
+	to := time.Now().Add(24 * time.Hour)
+
+	rev := entities.Reservation{
+		ID:           "reservation-1",
+		CourtID:      courtID,
+		ReservedBy:   "user-1",
+		Status:       entities.PendingReservationStatus,
+		ReservedFrom: time.Now().Add(1 * time.Hour),
+		ReservedTo:   time.Now().Add(2 * time.Hour),
+		CreatedAt:    time.Now(),
+	}
+
+	tests := []struct {
+		name       string
+		setupMocks func(*mocks.MockReservationsRepository)
+		wantErr    error
+		wantRevs   []entities.Reservation
+	}{
+		{
+			name: "success",
+			setupMocks: func(mockRepo *mocks.MockReservationsRepository) {
+				mockRepo.EXPECT().ListByCourtAndTimeRange(
+					ctx,
+					courtID,
+					from,
+					to,
+				).Return([]entities.Reservation{rev}, nil)
+			},
+			wantErr:  nil,
+			wantRevs: []entities.Reservation{rev},
+		},
+		{
+			name: "success - empty list",
+			setupMocks: func(mockRepo *mocks.MockReservationsRepository) {
+				mockRepo.EXPECT().ListByCourtAndTimeRange(
+					ctx,
+					courtID,
+					from,
+					to,
+				).Return([]entities.Reservation{}, nil)
+			},
+			wantErr:  nil,
+			wantRevs: []entities.Reservation{},
+		},
+		{
+			name: "internal error",
+			setupMocks: func(mockRepo *mocks.MockReservationsRepository) {
+				mockRepo.EXPECT().ListByCourtAndTimeRange(
+					ctx,
+					courtID,
+					from,
+					to,
+				).Return(nil, fmt.Errorf("error"))
+			},
+			wantErr:  fmt.Errorf("error"),
+			wantRevs: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			mockRepo := mocks.NewMockReservationsRepository(s.ctrl)
+			locker := reservation.NewLocalLocker()
+			service := reservation.NewService(mockRepo, locker)
+
+			tt.setupMocks(mockRepo)
+
+			listRevs, err := service.ListReservations(ctx, courtID, from, to)
+
+			if tt.wantErr != nil {
+				s.Require().Error(err)
+				s.Nil(listRevs)
+			} else {
+				s.Require().NoError(err)
+				s.Require().Len(listRevs, len(tt.wantRevs))
+				if len(tt.wantRevs) > 0 {
+					s.Equal(tt.wantRevs[0], listRevs[0])
+				}
 			}
 		})
 	}

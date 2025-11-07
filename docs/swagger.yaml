@@ -1,5 +1,5 @@
 definitions:
-  http.CancelReservationRequest:
+  internal_controllers_http.CancelReservationRequest:
     properties:
       cancelledBy:
         description: |-
@@ -7,14 +7,51 @@ definitions:
           example: "user_123"
         type: string
     type: object
-  http.ErrorResponse:
+  internal_controllers_http.ErrorResponse:
     properties:
       message:
         description: Message provides a human-readable description of the error.
         example: invalid JSON body
         type: string
     type: object
-  http.ReserveCourtRequest:
+  internal_controllers_http.ListRevsResponse:
+    properties:
+      reservations:
+        items:
+          $ref: '#/definitions/internal_controllers_http.ReservationResponse'
+        type: array
+    type: object
+  internal_controllers_http.ReservationResponse:
+    properties:
+      cancelledBy:
+        example: ""
+        type: string
+      courtId:
+        example: court-456
+        type: string
+      createdAt:
+        example: "2025-11-01T10:00:00Z"
+        format: date-time
+        type: string
+      id:
+        example: res-123
+        type: string
+      reservedBy:
+        example: user-789
+        type: string
+      reservedFrom:
+        example: 2025-11-04T18:30Z
+        format: date-time
+        type: string
+      reservedTo:
+        example: 2025-11-04T19:45Z
+        format: date-time
+        type: string
+      status:
+        example: reserved
+        type: string
+    type: object
+  internal_controllers_http.ReserveCourtRequest:
     properties:
       endTime:
         description: |-
@@ -40,6 +77,45 @@ info:
   version: "1.0"
 paths:
   /v1/reservations/{orgID}/courts/{courtID}:
+    get:
+      description: Returns all reservations for a court within a time range
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Court ID
+        in: path
+        name: courtID
+        required: true
+        type: string
+      - description: Start time in RFC3339 format
+        in: query
+        name: from
+        required: true
+        type: string
+      - description: End time in RFC3339 format
+        in: query
+        name: to
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controllers_http.ListRevsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+      summary: List reservations
+      tags:
+      - reservations
     post:
       consumes:
       - application/json
@@ -60,14 +136,18 @@ paths:
         name: reservation
         required: true
         schema:
-          $ref: '#/definitions/http.ReserveCourtRequest'
+          $ref: '#/definitions/internal_controllers_http.ReserveCourtRequest'
       responses:
         "200":
           description: OK
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/http.ErrorResponse'
+            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
         "500":
           description: Internal Server Error
       summary: Reserve a court
@@ -89,18 +169,18 @@ paths:
         name: cancel
         required: true
         schema:
-          $ref: '#/definitions/http.CancelReservationRequest'
+          $ref: '#/definitions/internal_controllers_http.CancelReservationRequest'
       responses:
         "200":
           description: OK
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/http.ErrorResponse'
+            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/http.ErrorResponse'
+            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
         "500":
           description: Internal Server Error
       summary: Cancel a reservation

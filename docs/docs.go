@@ -16,6 +16,63 @@ const docTemplate = `{
     "basePath": "{{.BasePath}}",
     "paths": {
         "/v1/reservations/{orgID}/courts/{courtID}": {
+            "get": {
+                "description": "Returns all reservations for a court within a time range",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reservations"
+                ],
+                "summary": "List reservations",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Court ID",
+                        "name": "courtID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start time in RFC3339 format",
+                        "name": "from",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "End time in RFC3339 format",
+                        "name": "to",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.ListRevsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            },
             "post": {
                 "description": "Creates a reservation for the specified organization and court.",
                 "consumes": [
@@ -46,7 +103,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/http.ReserveCourtRequest"
+                            "$ref": "#/definitions/internal_controllers_http.ReserveCourtRequest"
                         }
                     }
                 ],
@@ -57,7 +114,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/http.ErrorResponse"
+                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
                         }
                     },
                     "500": {
@@ -90,7 +153,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/http.CancelReservationRequest"
+                            "$ref": "#/definitions/internal_controllers_http.CancelReservationRequest"
                         }
                     }
                 ],
@@ -101,13 +164,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/http.ErrorResponse"
+                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/http.ErrorResponse"
+                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
                         }
                     },
                     "500": {
@@ -118,7 +181,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "http.CancelReservationRequest": {
+        "internal_controllers_http.CancelReservationRequest": {
             "type": "object",
             "properties": {
                 "cancelledBy": {
@@ -127,7 +190,7 @@ const docTemplate = `{
                 }
             }
         },
-        "http.ErrorResponse": {
+        "internal_controllers_http.ErrorResponse": {
             "type": "object",
             "properties": {
                 "message": {
@@ -137,7 +200,58 @@ const docTemplate = `{
                 }
             }
         },
-        "http.ReserveCourtRequest": {
+        "internal_controllers_http.ListRevsResponse": {
+            "type": "object",
+            "properties": {
+                "reservations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_controllers_http.ReservationResponse"
+                    }
+                }
+            }
+        },
+        "internal_controllers_http.ReservationResponse": {
+            "type": "object",
+            "properties": {
+                "cancelledBy": {
+                    "type": "string",
+                    "example": ""
+                },
+                "courtId": {
+                    "type": "string",
+                    "example": "court-456"
+                },
+                "createdAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2025-11-01T10:00:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "res-123"
+                },
+                "reservedBy": {
+                    "type": "string",
+                    "example": "user-789"
+                },
+                "reservedFrom": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2025-11-04T18:30Z"
+                },
+                "reservedTo": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2025-11-04T19:45Z"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "reserved"
+                }
+            }
+        },
+        "internal_controllers_http.ReserveCourtRequest": {
             "type": "object",
             "properties": {
                 "endTime": {

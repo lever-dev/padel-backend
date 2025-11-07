@@ -1,8 +1,0 @@
-*** Begin Patch
-*** Update File: internal/controllers/http/router.go
-@@
--	r.Get("/_docs", swagger.Handler())
-+	r.Get("/_docs/*", swagger.Handler(
-+		swagger.URL("/_docs/doc.json"),
-+	))
-*** End Patch

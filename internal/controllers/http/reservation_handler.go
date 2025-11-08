@@ -148,7 +148,7 @@ type CancelReservationRequest struct {
 // @Failure 400 {object} ErrorResponse
 // @Failure 404 {object} ErrorResponse
 // @Failure 500
-// @Router /reservations/{orgID}/courts/{courtID}/{reservationID} [delete]
+// @Router /v1/reservations/{orgID}/courts/{courtID}/{reservationID} [delete]
 func (h *ReservationHandler) CancelReservation(w http.ResponseWriter, r *http.Request) {
 	orgID := chi.URLParam(r, "orgID")
 	courtID := chi.URLParam(r, "courtID")

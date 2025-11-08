@@ -15,6 +15,56 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/reservations/{orgID}/courts/{courtID}/{reservationID}": {
+            "delete": {
+                "description": "Cancels the reservation with the specified ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reservations"
+                ],
+                "summary": "Cancel a reservation",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Reservation ID",
+                        "name": "reservationID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Cancellation payload",
+                        "name": "cancel",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.CancelReservationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/v1/reservations/{orgID}/courts/{courtID}": {
             "get": {
                 "description": "Returns all reservations for a court within a time range",
@@ -59,7 +109,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_controllers_http.ListRevsResponse"
+                            "$ref": "#/definitions/internal_controllers_http.ListReservationsResponse"
                         }
                     },
                     "400": {
@@ -128,56 +178,6 @@ const docTemplate = `{
                     }
                 }
             }
-        },
-        "/v1/reservations/{reservationID}": {
-            "delete": {
-                "description": "Cancels the reservation with the specified ID.",
-                "consumes": [
-                    "application/json"
-                ],
-                "tags": [
-                    "reservations"
-                ],
-                "summary": "Cancel a reservation",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Reservation ID",
-                        "name": "reservationID",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Cancellation payload",
-                        "name": "cancel",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_controllers_http.CancelReservationRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error"
-                    }
-                }
-            }
         }
     },
     "definitions": {
@@ -200,7 +200,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_controllers_http.ListRevsResponse": {
+        "internal_controllers_http.ListReservationsResponse": {
             "type": "object",
             "properties": {
                 "reservations": {

@@ -14,7 +14,7 @@ definitions:
         example: invalid JSON body
         type: string
     type: object
-  internal_controllers_http.ListRevsResponse:
+  internal_controllers_http.ListReservationsResponse:
     properties:
       reservations:
         items:
@@ -76,6 +76,39 @@ info:
   title: Padel Backend API
   version: "1.0"
 paths:
+  /reservations/{orgID}/courts/{courtID}/{reservationID}:
+    delete:
+      consumes:
+      - application/json
+      description: Cancels the reservation with the specified ID.
+      parameters:
+      - description: Reservation ID
+        in: path
+        name: reservationID
+        required: true
+        type: string
+      - description: Cancellation payload
+        in: body
+        name: cancel
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controllers_http.CancelReservationRequest'
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+      summary: Cancel a reservation
+      tags:
+      - reservations
   /v1/reservations/{orgID}/courts/{courtID}:
     get:
       description: Returns all reservations for a court within a time range
@@ -106,7 +139,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_controllers_http.ListRevsResponse'
+            $ref: '#/definitions/internal_controllers_http.ListReservationsResponse'
         "400":
           description: Bad Request
           schema:
@@ -151,39 +184,6 @@ paths:
         "500":
           description: Internal Server Error
       summary: Reserve a court
-      tags:
-      - reservations
-  /v1/reservations/{reservationID}:
-    delete:
-      consumes:
-      - application/json
-      description: Cancels the reservation with the specified ID.
-      parameters:
-      - description: Reservation ID
-        in: path
-        name: reservationID
-        required: true
-        type: string
-      - description: Cancellation payload
-        in: body
-        name: cancel
-        required: true
-        schema:
-          $ref: '#/definitions/internal_controllers_http.CancelReservationRequest'
-      responses:
-        "200":
-          description: OK
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
-        "500":
-          description: Internal Server Error
-      summary: Cancel a reservation
       tags:
       - reservations
 swagger: "2.0"

@@ -218,7 +218,7 @@ type ListReservationsResponse struct {
 // @Param from query string true "Start time in RFC3339 format" format:"date-time"
 // @Param to query string true "End time in RFC3339 format" format:"date-time"
 // @Produce json
-// @Success 200 {object} ListRevsResponse
+// @Success 200 {object} ListReservationsResponse
 // @Failure 400 {object} ErrorResponse
 // @Failure 500
 // @Router /v1/reservations/{orgID}/courts/{courtID} [get]

@@ -1,6 +1,10 @@
 package entities
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type ReservationStatus string
 
@@ -25,6 +29,7 @@ type Reservation struct {
 
 func NewReservation(courtID string, from, to time.Time, reservedBy string) *Reservation {
 	return &Reservation{
+		ID:           uuid.New().String(),
 		CourtID:      courtID,
 		ReservedFrom: from,
 		ReservedTo:   to,

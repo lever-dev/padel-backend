@@ -9,11 +9,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/lever-dev/padel-backend/internal/entities"
+	"github.com/lever-dev/padel-backend/pkg/httputil"
 	"github.com/rs/zerolog/log"
 )
 
 type ReservationService interface {
 	ReserveCourt(ctx context.Context, courtID string, reservation *entities.Reservation) error
+	ListReservations(ctx context.Context, courtID string, from, to time.Time) ([]entities.Reservation, error)
 	CancelReservation(ctx context.Context, reservationID string, cancelledBy string) error
 }
 
@@ -39,8 +41,7 @@ type ReserveCourtRequest struct {
 	EndTime time.Time `json:"endTime" example:"2025-11-04T19:45Z" format:"date-time"`
 }
 
-type ReserveCourtResponse struct {
-}
+type ReserveCourtResponse struct{}
 
 // ErrorResponse represents a standard error body.
 // swagger:model ErrorResponse
@@ -59,11 +60,19 @@ type ErrorResponse struct {
 // @Param reservation body ReserveCourtRequest true "Reservation payload"
 // @Success 200
 // @Failure 400 {object} ErrorResponse
+// @Failure 409 {object} ErrorResponse
 // @Failure 500
 // @Router /v1/reservations/{orgID}/courts/{courtID} [post]
 func (h *ReservationHandler) ReserveCourt(w http.ResponseWriter, r *http.Request) {
 	orgID := chi.URLParam(r, "orgID")
 	courtID := chi.URLParam(r, "courtID")
+
+	if orgID == "" || courtID == "" {
+		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{
+			Message: "orgID and courtID are required",
+		})
+		return
+	}
 
 	var req ReserveCourtRequest
 
@@ -74,7 +83,21 @@ func (h *ReservationHandler) ReserveCourt(w http.ResponseWriter, r *http.Request
 			Str("court id", courtID).
 			Msg("failed to decode reserve court request")
 
-		h.sendJSONResponse(w, http.StatusBadRequest, ErrorResponse{Message: "invalid json"})
+		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{Message: "invalid json"})
+		return
+	}
+
+	if req.StartTime.IsZero() || req.EndTime.IsZero() {
+		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{
+			Message: "startTime and endTime are required",
+		})
+		return
+	}
+
+	if !req.StartTime.Before(req.EndTime) {
+		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{
+			Message: "startTime must be before endTime",
+		})
 		return
 	}
 
@@ -82,6 +105,12 @@ func (h *ReservationHandler) ReserveCourt(w http.ResponseWriter, r *http.Request
 	reservation := entities.NewReservation(courtID, req.StartTime, req.EndTime, "")
 
 	if err := h.rsvService.ReserveCourt(r.Context(), courtID, reservation); err != nil {
+		if errors.Is(err, entities.ErrCourtAlreadyReserved) {
+			httputil.JSON(w, http.StatusConflict, ErrorResponse{
+				Message: "court is already reserved for this time slot",
+			})
+			return
+		}
 		log.Error().
 			Err(err).
 			Str("organization id", orgID).
@@ -119,55 +148,153 @@ type CancelReservationRequest struct {
 // @Failure 400 {object} ErrorResponse
 // @Failure 404 {object} ErrorResponse
 // @Failure 500
-// @Router /v1/reservations/{reservationID} [delete]
+// @Router /v1/reservations/{orgID}/courts/{courtID}/{reservationID} [delete]
 func (h *ReservationHandler) CancelReservation(w http.ResponseWriter, r *http.Request) {
+	orgID := chi.URLParam(r, "orgID")
+	courtID := chi.URLParam(r, "courtID")
 	reservationID := chi.URLParam(r, "reservationID")
-	if reservationID == "" {
-		http.Error(w, "reservation ID is required", http.StatusBadRequest)
+
+	if orgID == "" || courtID == "" || reservationID == "" {
+		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{
+			Message: "orgID, courtID, reservationID are required",
+		})
 		return
 	}
 
 	var req CancelReservationRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Error().Err(err).Msg("failed to decode request body")
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{Message: "invalid json"})
 		return
 	}
 
 	if req.CancelledBy == "" {
-		http.Error(w, "cancelled_by is required", http.StatusBadRequest)
+		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{Message: "cancelledBy is required"})
 		return
 	}
 
 	if err := h.rsvService.CancelReservation(r.Context(), reservationID, req.CancelledBy); err != nil {
 		if errors.Is(err, entities.ErrNotFound) {
-			http.Error(w, "reservation not found", http.StatusNotFound)
+			httputil.JSON(w, http.StatusNotFound, ErrorResponse{Message: "reservation not found"})
 			return
 		}
 
 		log.Error().Err(err).
 			Str("reservation_id", reservationID).
 			Msg("failed to cancel reservation")
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-
-}
-
-// TODO: move to pkg library
-func (h *ReservationHandler) sendJSONResponse(w http.ResponseWriter, status int, body any) {
-	w.Header().Set("Content-Type", "application/json")
-
-	if err := json.NewEncoder(w).Encode(body); err != nil {
-		log.Error().
-			Err(err).
-			Msg("failed to encode body")
 
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	w.WriteHeader(status)
+	w.WriteHeader(http.StatusOK)
+	log.Info().
+		Str("reservation_id", reservationID).
+		Str("cancelled_by", req.CancelledBy).
+		Msg("reservation cancelled successfully")
+}
+
+type ReservationResponse struct {
+	ID           string    `json:"id"                    example:"res-123"`
+	CourtID      string    `json:"courtId"               example:"court-456"`
+	Status       string    `json:"status"                example:"reserved"`
+	ReservedFrom time.Time `json:"reservedFrom"          example:"2025-11-04T18:30Z"    format:"date-time"`
+	ReservedTo   time.Time `json:"reservedTo"            example:"2025-11-04T19:45Z"    format:"date-time"`
+	ReservedBy   string    `json:"reservedBy"            example:"user-789"`
+	CancelledBy  string    `json:"cancelledBy,omitempty" example:""`
+	CreatedAt    time.Time `json:"createdAt"             example:"2025-11-01T10:00:00Z" format:"date-time"`
+}
+
+type ListReservationsResponse struct {
+	Reservations []ReservationResponse `json:"reservations"`
+}
+
+// ListReservations godoc
+// @Summary List reservations
+// @Description Returns all reservations for a court within a time range
+// @Tags reservations
+// @Param orgID path string true "Organization ID"
+// @Param courtID path string true "Court ID"
+// @Param from query string true "Start time in RFC3339 format" format:"date-time"
+// @Param to query string true "End time in RFC3339 format" format:"date-time"
+// @Produce json
+// @Success 200 {object} ListReservationsResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 500
+// @Router /v1/reservations/{orgID}/courts/{courtID} [get]
+func (h *ReservationHandler) ListReservations(w http.ResponseWriter, r *http.Request) {
+	orgID := chi.URLParam(r, "orgID")
+	courtID := chi.URLParam(r, "courtID")
+
+	if orgID == "" || courtID == "" {
+		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{
+			Message: "orgID and courtID are required",
+		})
+		return
+	}
+
+	fromStr := r.URL.Query().Get("from")
+	toStr := r.URL.Query().Get("to")
+
+	if fromStr == "" || toStr == "" {
+		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{
+			Message: "from and to query parameters are required (RFC3339 format)",
+		})
+		return
+	}
+
+	from, err := time.Parse(time.RFC3339, fromStr)
+	if err != nil {
+		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{
+			Message: "invalid from time format, expected RFC3339",
+		})
+		return
+	}
+
+	to, err := time.Parse(time.RFC3339, toStr)
+	if err != nil {
+		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{
+			Message: "invalid to time format, expected RFC3339",
+		})
+		return
+	}
+
+	if !from.Before(to) {
+		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{
+			Message: "from must be before to",
+		})
+		return
+	}
+
+	revs, err := h.rsvService.ListReservations(r.Context(), courtID, from, to)
+	if err != nil {
+		log.Error().
+			Err(err).
+			Str("organization id", orgID).
+			Str("court id", courtID).
+			Msg("failed to get reservations")
+
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	dtos := make([]ReservationResponse, 0, len(revs))
+	for _, res := range revs {
+		dtos = append(dtos, ReservationResponse{
+			ID:           res.ID,
+			CourtID:      res.ID,
+			ReservedBy:   res.ReservedBy,
+			Status:       string(res.Status),
+			ReservedFrom: res.ReservedFrom,
+			ReservedTo:   res.ReservedTo,
+			CreatedAt:    res.CreatedAt,
+		})
+	}
+
+	httputil.JSON(w, http.StatusOK, ListReservationsResponse{Reservations: dtos})
+
+	log.Info().
+		Str("organization_id", orgID).
+		Str("court_id", courtID).
+		Msg("successfully listed reservations")
 }

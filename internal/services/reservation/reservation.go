@@ -46,7 +46,11 @@ func (s *Service) ReserveCourt(ctx context.Context, courtID string, reservation 
 		return entities.ErrCourtAlreadyReserved
 	}
 
-	return s.reservationsRepo.Create(ctx, reservation)
+	if err := s.reservationsRepo.Create(ctx, reservation); err != nil {
+		return fmt.Errorf("create reservation: %w", err)
+	}
+
+	return nil
 }
 
 func (s *Service) ListReservations(
@@ -54,14 +58,14 @@ func (s *Service) ListReservations(
 	courtID string,
 	from, to time.Time,
 ) ([]entities.Reservation, error) {
-	return nil, nil
+	revs, err := s.reservationsRepo.ListByCourtAndTimeRange(ctx, courtID, from, to)
+	if err != nil {
+		return nil, fmt.Errorf("list reservations by court and time range: %w", err)
+	}
+	return revs, nil
 }
 
-func (s *Service) CancelReservation(
-	ctx context.Context,
-	reservationID string,
-	cancelledBy string,
-) error {
+func (s *Service) CancelReservation(ctx context.Context, reservationID string, cancelledBy string) error {
 	if err := s.reservationsRepo.CancelReservation(ctx, reservationID, cancelledBy); err != nil {
 		return fmt.Errorf("cancel reservation: %w", err)
 	}

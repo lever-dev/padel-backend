@@ -2,7 +2,6 @@ package reservation
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -61,16 +60,13 @@ func (s *Service) ListReservations(
 ) ([]entities.Reservation, error) {
 	revs, err := s.reservationsRepo.ListByCourtAndTimeRange(ctx, courtID, from, to)
 	if err != nil {
-		return nil, fmt.Errorf("get reservations: %w", err)
+		return nil, fmt.Errorf("list reservations by court and time range: %w", err)
 	}
 	return revs, nil
 }
 
 func (s *Service) CancelReservation(ctx context.Context, reservationID string, cancelledBy string) error {
 	if err := s.reservationsRepo.CancelReservation(ctx, reservationID, cancelledBy); err != nil {
-		if errors.Is(err, entities.ErrNotFound) {
-			return entities.ErrNotFound
-		}
 		return fmt.Errorf("cancel reservation: %w", err)
 	}
 

@@ -359,7 +359,7 @@ func (s *ServiceSuite) TestCancelReservation() {
 	}
 }
 
-func (s *ServiceSuite) TestGetListRevs() {
+func (s *ServiceSuite) TestGetListReservations() {
 	ctx := context.Background()
 	courtID := "court-1"
 	from := time.Now().Add(1 * time.Hour)
@@ -378,7 +378,7 @@ func (s *ServiceSuite) TestGetListRevs() {
 	tests := []struct {
 		name       string
 		setupMocks func(*mocks.MockReservationsRepository)
-		wantErr    error
+		wantErr    bool
 		wantRevs   []entities.Reservation
 	}{
 		{
@@ -391,7 +391,7 @@ func (s *ServiceSuite) TestGetListRevs() {
 					to,
 				).Return([]entities.Reservation{rev}, nil)
 			},
-			wantErr:  nil,
+			wantErr:  false,
 			wantRevs: []entities.Reservation{rev},
 		},
 		{
@@ -404,7 +404,7 @@ func (s *ServiceSuite) TestGetListRevs() {
 					to,
 				).Return([]entities.Reservation{}, nil)
 			},
-			wantErr:  nil,
+			wantErr:  false,
 			wantRevs: []entities.Reservation{},
 		},
 		{
@@ -417,7 +417,7 @@ func (s *ServiceSuite) TestGetListRevs() {
 					to,
 				).Return(nil, fmt.Errorf("error"))
 			},
-			wantErr:  fmt.Errorf("error"),
+			wantErr:  true,
 			wantRevs: nil,
 		},
 	}
@@ -432,16 +432,13 @@ func (s *ServiceSuite) TestGetListRevs() {
 
 			listRevs, err := service.ListReservations(ctx, courtID, from, to)
 
-			if tt.wantErr != nil {
+			if tt.wantErr {
 				s.Require().Error(err)
-				s.Nil(listRevs)
 			} else {
 				s.Require().NoError(err)
-				s.Require().Len(listRevs, len(tt.wantRevs))
-				if len(tt.wantRevs) > 0 {
-					s.Equal(tt.wantRevs[0], listRevs[0])
-				}
 			}
+
+			s.Equal(tt.wantRevs, listRevs)
 		})
 	}
 }

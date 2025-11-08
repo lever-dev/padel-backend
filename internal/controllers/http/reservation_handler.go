@@ -9,7 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/lever-dev/padel-backend/internal/entities"
-	"github.com/lever-dev/padel-backend/pkg/render"
+	"github.com/lever-dev/padel-backend/pkg/httputil"
 	"github.com/rs/zerolog/log"
 )
 
@@ -68,7 +68,7 @@ func (h *ReservationHandler) ReserveCourt(w http.ResponseWriter, r *http.Request
 	courtID := chi.URLParam(r, "courtID")
 
 	if orgID == "" || courtID == "" {
-		render.JSON(w, http.StatusBadRequest, ErrorResponse{
+		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{
 			Message: "orgID and courtID are required",
 		})
 		return
@@ -83,27 +83,20 @@ func (h *ReservationHandler) ReserveCourt(w http.ResponseWriter, r *http.Request
 			Str("court id", courtID).
 			Msg("failed to decode reserve court request")
 
-		render.JSON(w, http.StatusBadRequest, ErrorResponse{Message: "invalid json"})
+		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{Message: "invalid json"})
 		return
 	}
 
 	if req.StartTime.IsZero() || req.EndTime.IsZero() {
-		render.JSON(w, http.StatusBadRequest, ErrorResponse{
+		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{
 			Message: "startTime and endTime are required",
 		})
 		return
 	}
 
 	if !req.StartTime.Before(req.EndTime) {
-		render.JSON(w, http.StatusBadRequest, ErrorResponse{
+		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{
 			Message: "startTime must be before endTime",
-		})
-		return
-	}
-
-	if req.StartTime.Before(time.Now()) {
-		render.JSON(w, http.StatusBadRequest, ErrorResponse{
-			Message: "cannot reserve in the past",
 		})
 		return
 	}
@@ -113,7 +106,7 @@ func (h *ReservationHandler) ReserveCourt(w http.ResponseWriter, r *http.Request
 
 	if err := h.rsvService.ReserveCourt(r.Context(), courtID, reservation); err != nil {
 		if errors.Is(err, entities.ErrCourtAlreadyReserved) {
-			render.JSON(w, http.StatusConflict, ErrorResponse{
+			httputil.JSON(w, http.StatusConflict, ErrorResponse{
 				Message: "court is already reserved for this time slot",
 			})
 			return
@@ -128,7 +121,6 @@ func (h *ReservationHandler) ReserveCourt(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
 	log.Info().
 		Str("organization id", orgID).
 		Str("court id", courtID).
@@ -156,29 +148,34 @@ type CancelReservationRequest struct {
 // @Failure 400 {object} ErrorResponse
 // @Failure 404 {object} ErrorResponse
 // @Failure 500
-// @Router /v1/reservations/{reservationID} [delete]
+// @Router /reservations/{orgID}/courts/{courtID}/{reservationID} [delete]
 func (h *ReservationHandler) CancelReservation(w http.ResponseWriter, r *http.Request) {
+	orgID := chi.URLParam(r, "orgID")
+	courtID := chi.URLParam(r, "courtID")
 	reservationID := chi.URLParam(r, "reservationID")
-	if reservationID == "" {
-		render.JSON(w, http.StatusBadRequest, ErrorResponse{Message: "reservation ID is required"})
+
+	if orgID == "" || courtID == "" || reservationID == "" {
+		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{
+			Message: "orgID, courtID, reservationID are required",
+		})
 		return
 	}
 
 	var req CancelReservationRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Error().Err(err).Msg("failed to decode request body")
-		render.JSON(w, http.StatusBadRequest, ErrorResponse{Message: "invalid json"})
+		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{Message: "invalid json"})
 		return
 	}
 
 	if req.CancelledBy == "" {
-		render.JSON(w, http.StatusBadRequest, ErrorResponse{Message: "cancelledBy is required"})
+		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{Message: "cancelledBy is required"})
 		return
 	}
 
 	if err := h.rsvService.CancelReservation(r.Context(), reservationID, req.CancelledBy); err != nil {
 		if errors.Is(err, entities.ErrNotFound) {
-			render.JSON(w, http.StatusNotFound, ErrorResponse{Message: "reservation not found"})
+			httputil.JSON(w, http.StatusNotFound, ErrorResponse{Message: "reservation not found"})
 			return
 		}
 
@@ -208,7 +205,7 @@ type ReservationResponse struct {
 	CreatedAt    time.Time `json:"createdAt"             example:"2025-11-01T10:00:00Z" format:"date-time"`
 }
 
-type ListRevsResponse struct {
+type ListReservationsResponse struct {
 	Reservations []ReservationResponse `json:"reservations"`
 }
 
@@ -230,7 +227,7 @@ func (h *ReservationHandler) ListReservations(w http.ResponseWriter, r *http.Req
 	courtID := chi.URLParam(r, "courtID")
 
 	if orgID == "" || courtID == "" {
-		render.JSON(w, http.StatusBadRequest, ErrorResponse{
+		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{
 			Message: "orgID and courtID are required",
 		})
 		return
@@ -240,7 +237,7 @@ func (h *ReservationHandler) ListReservations(w http.ResponseWriter, r *http.Req
 	toStr := r.URL.Query().Get("to")
 
 	if fromStr == "" || toStr == "" {
-		render.JSON(w, http.StatusBadRequest, ErrorResponse{
+		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{
 			Message: "from and to query parameters are required (RFC3339 format)",
 		})
 		return
@@ -248,7 +245,7 @@ func (h *ReservationHandler) ListReservations(w http.ResponseWriter, r *http.Req
 
 	from, err := time.Parse(time.RFC3339, fromStr)
 	if err != nil {
-		render.JSON(w, http.StatusBadRequest, ErrorResponse{
+		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{
 			Message: "invalid from time format, expected RFC3339",
 		})
 		return
@@ -256,14 +253,14 @@ func (h *ReservationHandler) ListReservations(w http.ResponseWriter, r *http.Req
 
 	to, err := time.Parse(time.RFC3339, toStr)
 	if err != nil {
-		render.JSON(w, http.StatusBadRequest, ErrorResponse{
+		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{
 			Message: "invalid to time format, expected RFC3339",
 		})
 		return
 	}
 
 	if !from.Before(to) {
-		render.JSON(w, http.StatusBadRequest, ErrorResponse{
+		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{
 			Message: "from must be before to",
 		})
 		return
@@ -294,9 +291,7 @@ func (h *ReservationHandler) ListReservations(w http.ResponseWriter, r *http.Req
 		})
 	}
 
-	revsResponse := ListRevsResponse{Reservations: dtos}
-
-	render.JSON(w, http.StatusOK, revsResponse)
+	httputil.JSON(w, http.StatusOK, ListReservationsResponse{Reservations: dtos})
 
 	log.Info().
 		Str("organization_id", orgID).

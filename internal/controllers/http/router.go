@@ -28,6 +28,7 @@ func NewRouter(reservationHandler *ReservationHandler) http.Handler {
 		r.Post("/reservations/{orgID}/courts/{courtID}", reservationHandler.ReserveCourt)
 		r.Delete("/reservations/{orgID}/courts/{courtID}/{reservationID}", reservationHandler.CancelReservation)
 		r.Get("/reservations/{orgID}/courts/{courtID}", reservationHandler.ListReservations)
+		r.Get("/reservations/{orgID}/courts/{courtID}/{reservationID}", reservationHandler.GetReservation)
 	})
 
 	return r

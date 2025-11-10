@@ -72,3 +72,11 @@ func (s *Service) CancelReservation(ctx context.Context, reservationID string, c
 
 	return nil
 }
+
+func (s *Service) GetReservation(ctx context.Context, reservationID string) (*entities.Reservation, error) {
+	revs, err := s.reservationsRepo.GetByID(ctx, reservationID)
+	if err != nil {
+		return nil, fmt.Errorf("get reservation by id: %w", err)
+	}
+	return revs, nil
+}

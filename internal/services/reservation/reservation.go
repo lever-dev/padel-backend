@@ -80,8 +80,15 @@ func (s *Service) GetReservation(ctx context.Context, courtID, reservationID str
 	}
 
 	if rev.CourtID != courtID {
-		log.Error().Err(err).Str("reservationID", reservationID).Msg("reservation not found")
-		return nil, fmt.Errorf("reservation %s not found for court %s", reservationID, courtID)
+		log.Error().Err(err).
+			Str("reservationID", reservationID).
+			Str("courtID", courtID).
+			Msg("reservation's court ID does not match the requested court ID")
+		return nil, fmt.Errorf(
+			"reservation court ids mismatch, reservation id: %s, court id: %s",
+			reservationID,
+			courtID,
+		)
 	}
 	return rev, nil
 }

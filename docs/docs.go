@@ -15,7 +15,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/v1/organizations/{orgID}/courts/{courtID}": {
+        "/v1/organizations/{orgID}/courts/{courtID}/reservations": {
             "get": {
                 "description": "Returns all reservations for a court within a time range",
                 "produces": [

@@ -63,7 +63,7 @@ type ErrorResponse struct {
 // @Failure 400 {object} ErrorResponse
 // @Failure 409 {object} ErrorResponse
 // @Failure 500
-// @Router /v1/organizations/{orgID}/courts/{courtID} [post]
+// @Router /v1/organizations/{orgID}/courts/{courtID}/reservations [post]
 func (h *ReservationHandler) ReserveCourt(w http.ResponseWriter, r *http.Request) {
 	orgID := chi.URLParam(r, "orgID")
 	courtID := chi.URLParam(r, "courtID")
@@ -222,7 +222,7 @@ type ListReservationsResponse struct {
 // @Success 200 {object} ListReservationsResponse
 // @Failure 400 {object} ErrorResponse
 // @Failure 500
-// @Router /v1/organizations/{orgID}/courts/{courtID} [get]
+// @Router /v1/organizations/{orgID}/courts/{courtID}/reservations [get]
 func (h *ReservationHandler) ListReservations(w http.ResponseWriter, r *http.Request) {
 	orgID := chi.URLParam(r, "orgID")
 	courtID := chi.URLParam(r, "courtID")
@@ -330,6 +330,7 @@ func (h *ReservationHandler) GetReservation(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		if errors.Is(err, entities.ErrNotFound) {
 			w.WriteHeader(http.StatusNotFound)
+			return
 		}
 
 		log.Error().

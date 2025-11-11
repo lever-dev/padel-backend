@@ -76,7 +76,7 @@ info:
   title: Padel Backend API
   version: "1.0"
 paths:
-  /v1/organizations/{orgID}/courts/{courtID}:
+  /v1/organizations/{orgID}/courts/{courtID}/reservations:
     get:
       description: Returns all reservations for a court within a time range
       parameters:

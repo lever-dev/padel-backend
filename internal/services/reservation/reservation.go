@@ -72,3 +72,23 @@ func (s *Service) CancelReservation(ctx context.Context, reservationID string, c
 
 	return nil
 }
+
+func (s *Service) GetReservation(ctx context.Context, courtID, reservationID string) (*entities.Reservation, error) {
+	rev, err := s.reservationsRepo.GetByID(ctx, reservationID)
+	if err != nil {
+		return nil, fmt.Errorf("get reservation by id: %w", err)
+	}
+
+	if rev.CourtID != courtID {
+		log.Error().Err(err).
+			Str("reservationID", reservationID).
+			Str("courtID", courtID).
+			Msg("reservation's court ID does not match the requested court ID")
+		return nil, fmt.Errorf(
+			"reservation court ids mismatch, reservation id: %s, court id: %s",
+			reservationID,
+			courtID,
+		)
+	}
+	return rev, nil
+}

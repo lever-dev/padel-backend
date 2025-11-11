@@ -17,7 +17,7 @@ type ReservationService interface {
 	ReserveCourt(ctx context.Context, courtID string, reservation *entities.Reservation) error
 	ListReservations(ctx context.Context, courtID string, from, to time.Time) ([]entities.Reservation, error)
 	CancelReservation(ctx context.Context, reservationID string, cancelledBy string) error
-	GetReservation(ctx context.Context, reservstionID string) (*entities.Reservation, error)
+	GetReservation(ctx context.Context, courtID, reservstionID string) (*entities.Reservation, error)
 }
 
 type ReservationHandler struct {
@@ -63,7 +63,7 @@ type ErrorResponse struct {
 // @Failure 400 {object} ErrorResponse
 // @Failure 409 {object} ErrorResponse
 // @Failure 500
-// @Router /v1/reservations/{orgID}/courts/{courtID} [post]
+// @Router /v1/organizations/{orgID}/courts/{courtID} [post]
 func (h *ReservationHandler) ReserveCourt(w http.ResponseWriter, r *http.Request) {
 	orgID := chi.URLParam(r, "orgID")
 	courtID := chi.URLParam(r, "courtID")
@@ -149,7 +149,7 @@ type CancelReservationRequest struct {
 // @Failure 400 {object} ErrorResponse
 // @Failure 404 {object} ErrorResponse
 // @Failure 500
-// @Router /v1/reservations/{orgID}/courts/{courtID}/{reservationID} [delete]
+// @Router /v1/organizations/{orgID}/courts/{courtID}/reservations/{reservationID} [delete]
 func (h *ReservationHandler) CancelReservation(w http.ResponseWriter, r *http.Request) {
 	orgID := chi.URLParam(r, "orgID")
 	courtID := chi.URLParam(r, "courtID")
@@ -222,7 +222,7 @@ type ListReservationsResponse struct {
 // @Success 200 {object} ListReservationsResponse
 // @Failure 400 {object} ErrorResponse
 // @Failure 500
-// @Router /v1/reservations/{orgID}/courts/{courtID} [get]
+// @Router /v1/organizations/{orgID}/courts/{courtID} [get]
 func (h *ReservationHandler) ListReservations(w http.ResponseWriter, r *http.Request) {
 	orgID := chi.URLParam(r, "orgID")
 	courtID := chi.URLParam(r, "courtID")
@@ -300,6 +300,19 @@ func (h *ReservationHandler) ListReservations(w http.ResponseWriter, r *http.Req
 		Msg("successfully listed reservations")
 }
 
+// GetReservation godoc
+// @Summary Get a reservation
+// @Description Retrieves the reservation with the specified ID.
+// @Tags reservations
+// @Param orgID path string true "Organization ID"
+// @Param courtID path string true "Court ID"
+// @Param reservationID path string true "Reservation ID"
+// @Produce json
+// @Success 200 {object} ReservationResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 404
+// @Failure 500
+// @Router /v1/organizations/{orgID}/courts/{courtID}/reservations/{reservationID} [get]
 func (h *ReservationHandler) GetReservation(w http.ResponseWriter, r *http.Request) {
 	orgID := chi.URLParam(r, "orgID")
 	courtID := chi.URLParam(r, "courtID")
@@ -312,27 +325,11 @@ func (h *ReservationHandler) GetReservation(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// GetReservation godoc
-	// @Summary Get a reservation
-	// @Description Retrieves the reservation with the specified ID.
-	// @Tags reservations
-	// @Param orgID path string true "Organization ID"
-	// @Param courtID path string true "Court ID"
-	// @Param reservationID path string true "Reservation ID"
-	// @Produce json
-	// @Success 200 {object} ReservationResponse
-	// @Failure 400 {object} ErrorResponse
-	// @Failure 404 {object} ErrorResponse
-	// @Failure 500
-	// @Router /v1/reservations/{orgID}/courts/{courtID}/{reservationID} [get]
-	revs, err := h.rsvService.GetReservation(r.Context(), reservationID)
+	rev, err := h.rsvService.GetReservation(r.Context(), courtID, reservationID)
 
 	if err != nil {
 		if errors.Is(err, entities.ErrNotFound) {
-			httputil.JSON(w, http.StatusNotFound, ErrorResponse{
-				Message: "reservation not found",
-			})
-			return
+			w.WriteHeader(http.StatusNotFound)
 		}
 
 		log.Error().
@@ -346,22 +343,15 @@ func (h *ReservationHandler) GetReservation(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if revs.CourtID != courtID {
-		httputil.JSON(w, http.StatusNotFound, ErrorResponse{
-			Message: "reservation not found",
-		})
-		return
-	}
-
 	resp := ReservationResponse{
-		ID:           revs.ID,
-		CourtID:      revs.CourtID,
-		ReservedBy:   revs.ReservedBy,
-		Status:       string(revs.Status),
-		ReservedFrom: revs.ReservedFrom,
-		ReservedTo:   revs.ReservedTo,
-		CancelledBy:  revs.CancelledBy,
-		CreatedAt:    revs.CreatedAt,
+		ID:           rev.ID,
+		CourtID:      rev.CourtID,
+		ReservedBy:   rev.ReservedBy,
+		Status:       string(rev.Status),
+		ReservedFrom: rev.ReservedFrom,
+		ReservedTo:   rev.ReservedTo,
+		CancelledBy:  rev.CancelledBy,
+		CreatedAt:    rev.CreatedAt,
 	}
 
 	httputil.JSON(w, http.StatusOK, resp)

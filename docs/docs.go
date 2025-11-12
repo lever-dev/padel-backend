@@ -15,6 +15,96 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/v1/auth/login": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Login with nickname and password",
+                "parameters": [
+                    {
+                        "description": "Login payload",
+                        "name": "login",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.LoginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/v1/auth/register": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Register a new user",
+                "parameters": [
+                    {
+                        "description": "Registration payload",
+                        "name": "register",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.RegisterUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.RegisterUserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/v1/organizations/{orgID}/courts/{courtID}/reservations": {
             "get": {
                 "description": "Returns all reservations for a court within a time range",
@@ -261,6 +351,79 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/internal_controllers_http.ReservationResponse"
                     }
+                }
+            }
+        },
+        "internal_controllers_http.LoginRequest": {
+            "type": "object",
+            "properties": {
+                "nickname": {
+                    "type": "string",
+                    "example": "johnny"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "super-secret"
+                }
+            }
+        },
+        "internal_controllers_http.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string",
+                    "example": "jwt-token"
+                }
+            }
+        },
+        "internal_controllers_http.RegisterUserRequest": {
+            "type": "object",
+            "properties": {
+                "firstName": {
+                    "type": "string",
+                    "example": "John"
+                },
+                "lastName": {
+                    "description": "LastName of the registering user",
+                    "type": "string",
+                    "example": "Doe"
+                },
+                "nickname": {
+                    "type": "string",
+                    "example": "johnny"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "super-secret"
+                },
+                "phoneNumber": {
+                    "type": "string",
+                    "example": "+77010000000"
+                }
+            }
+        },
+        "internal_controllers_http.RegisterUserResponse": {
+            "type": "object",
+            "properties": {
+                "firstName": {
+                    "type": "string",
+                    "example": "John"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "user-123"
+                },
+                "lastName": {
+                    "type": "string",
+                    "example": "Doe"
+                },
+                "nickname": {
+                    "type": "string",
+                    "example": "johnny"
+                },
+                "phoneNumber": {
+                    "type": "string",
+                    "example": "+77010000000"
                 }
             }
         },

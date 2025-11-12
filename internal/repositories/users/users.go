@@ -58,6 +58,8 @@ func (r *Repository) Create(ctx context.Context, user *entities.User) error {
 		ctx,
 		createUserQuery,
 		d.ID,
+		d.Nickname,
+		d.HashedPassword,
 		d.PhoneNumber,
 		d.FirstName,
 		d.LastName,
@@ -74,12 +76,14 @@ func (r *Repository) Create(ctx context.Context, user *entities.User) error {
 const createUserQuery = `
 INSERT INTO users(
 	id,
+	nickname,
+	password,
 	phone_number,
 	first_name,
 	last_name,
 	created_at,
 	last_login_at
-) VALUES ($1, $2, $3, $4, $5, $6)
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 `
 
 func (r *Repository) GetByID(ctx context.Context, userID string) (*entities.User, error) {
@@ -101,6 +105,8 @@ func (r *Repository) GetByID(ctx context.Context, userID string) (*entities.User
 const getUserByIDQuery = `
 SELECT
 	id,
+	nickname,
+	password,
 	phone_number,
 	first_name,
 	last_name,
@@ -130,6 +136,8 @@ func (r *Repository) GetByPhoneNumber(ctx context.Context, phoneNumber string) (
 const getUserByPhoneQuery = `
 SELECT
 	id,
+	nickname,
+	password,
 	phone_number,
 	first_name,
 	last_name,
@@ -137,6 +145,37 @@ SELECT
 	last_login_at
 FROM users
 WHERE phone_number = $1
+LIMIT 1
+`
+
+func (r *Repository) GetByNickname(ctx context.Context, nickname string) (entities.User, error) {
+	if r.pool == nil {
+		return entities.User{}, fmt.Errorf("not connected to pool")
+	}
+
+	user, err := scan(r.pool.QueryRow(ctx, getUserByNicknameQuery, nickname))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return entities.User{}, entities.ErrNotFound
+		}
+		return entities.User{}, fmt.Errorf("scan user: %w", err)
+	}
+
+	return user, nil
+}
+
+const getUserByNicknameQuery = `
+SELECT
+	id,
+	nickname,
+	password,
+	phone_number,
+	first_name,
+	last_name,
+	created_at,
+	last_login_at
+FROM users
+WHERE nickname = $1
 LIMIT 1
 `
 
@@ -177,6 +216,8 @@ func scan(scanner rowScanner) (entities.User, error) {
 
 	err := scanner.Scan(
 		&d.ID,
+		&d.Nickname,
+		&d.HashedPassword,
 		&d.PhoneNumber,
 		&d.FirstName,
 		&d.LastName,

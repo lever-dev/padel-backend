@@ -2,6 +2,7 @@ package users_test
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -47,11 +48,13 @@ func (s *repositorySuite) TestCreateUser() {
 	createdAt := time.Date(2024, 7, 1, 10, 0, 0, 0, time.UTC)
 
 	user := &entities.User{
-		ID:          "user-create-1",
-		PhoneNumber: "+77010000001",
-		FirstName:   "Alice",
-		LastName:    "Baker",
-		CreatedAt:   createdAt,
+		ID:             "user-create-1",
+		Nickname:       "alice",
+		HashedPassword: "hashed",
+		PhoneNumber:    "+77010000001",
+		FirstName:      "Alice",
+		LastName:       "Baker",
+		CreatedAt:      createdAt,
 	}
 
 	err := s.repo.Create(ctx, user)
@@ -60,7 +63,7 @@ func (s *repositorySuite) TestCreateUser() {
 	userDB, err := s.repo.GetByID(ctx, user.ID)
 	s.Require().NoError(err)
 
-	s.Equal(user, userDB)
+	s.Equal(*user, *userDB)
 }
 
 func (s *repositorySuite) TestGetByID_NotFound() {
@@ -76,11 +79,13 @@ func (s *repositorySuite) TestGetByPhoneNumber() {
 	lastLogin := time.Date(2024, 7, 2, 11, 0, 0, 0, time.UTC)
 
 	user := &entities.User{
-		ID:          "user-phone-1",
-		PhoneNumber: "+77010000002",
-		FirstName:   "Bob",
-		LastName:    "Carter",
-		LastLoginAt: &lastLogin,
+		ID:             "user-phone-1",
+		Nickname:       "bob",
+		HashedPassword: "hashed",
+		PhoneNumber:    "+77010000002",
+		FirstName:      "Bob",
+		LastName:       "Carter",
+		LastLoginAt:    &lastLogin,
 	}
 
 	s.seedUsers(ctx, []*entities.User{user})
@@ -92,13 +97,36 @@ func (s *repositorySuite) TestGetByPhoneNumber() {
 	s.Equal(lastLogin.UTC(), result.LastLoginAt.UTC())
 }
 
+func (s *repositorySuite) TestGetByNickname() {
+	ctx := context.Background()
+
+	user := &entities.User{
+		ID:             "user-nick-1",
+		Nickname:       "carol",
+		HashedPassword: "hashed",
+		PhoneNumber:    "+77010000005",
+		FirstName:      "Carol",
+		LastName:       "Danvers",
+	}
+
+	s.seedUsers(ctx, []*entities.User{user})
+
+	found, err := s.repo.GetByNickname(ctx, user.Nickname)
+	s.Require().NoError(err)
+	s.Equal(user.ID, found.ID)
+	s.Equal(user.Nickname, found.Nickname)
+	s.Equal(user.HashedPassword, found.HashedPassword)
+}
+
 func (s *repositorySuite) TestUpdateLastLogin() {
 	ctx := context.Background()
 	user := &entities.User{
-		ID:          "user-login-1",
-		PhoneNumber: "+77010000003",
-		FirstName:   "Carol",
-		LastName:    "Davis",
+		ID:             "user-login-1",
+		Nickname:       "dave",
+		HashedPassword: "hashed",
+		PhoneNumber:    "+77010000003",
+		FirstName:      "Carol",
+		LastName:       "Davis",
 	}
 
 	s.seedUsers(ctx, []*entities.User{user})
@@ -127,6 +155,12 @@ func (s *repositorySuite) seedUsers(ctx context.Context, usersToSeed []*entities
 	for _, u := range usersToSeed {
 		if u.CreatedAt.IsZero() {
 			u.CreatedAt = time.Now().UTC()
+		}
+		if u.Nickname == "" {
+			u.Nickname = fmt.Sprintf("nick-%s", u.ID)
+		}
+		if u.HashedPassword == "" {
+			u.HashedPassword = "hashed-password"
 		}
 		s.Require().NoError(s.repo.Create(ctx, u), "seeding user %s", u.ID)
 	}

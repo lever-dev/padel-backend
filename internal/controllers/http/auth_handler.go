@@ -81,22 +81,22 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 // RegisterUserRequest represents the expected payload for user registration.
 // swagger:model RegisterUserRequest
 type RegisterUserRequest struct {
-	Nickname    string `json:"nickname" example:"johnny"`
-	Password    string `json:"password" example:"super-secret"`
+	Nickname    string `json:"nickname"    example:"johnny"`
+	Password    string `json:"password"    example:"super-secret"`
 	PhoneNumber string `json:"phoneNumber" example:"+77010000000"`
-	FirstName   string `json:"firstName" example:"John"`
+	FirstName   string `json:"firstName"   example:"John"`
 	// LastName of the registering user
-	LastName string `json:"lastName" example:"Doe"`
+	LastName string `json:"lastName"    example:"Doe"`
 }
 
 // RegisterUserResponse represents the response body returned after a successful registration.
 // swagger:model RegisterUserResponse
 type RegisterUserResponse struct {
-	ID          string `json:"id" example:"user-123"`
-	Nickname    string `json:"nickname" example:"johnny"`
+	ID          string `json:"id"          example:"user-123"`
+	Nickname    string `json:"nickname"    example:"johnny"`
 	PhoneNumber string `json:"phoneNumber" example:"+77010000000"`
-	FirstName   string `json:"firstName" example:"John"`
-	LastName    string `json:"lastName" example:"Doe"`
+	FirstName   string `json:"firstName"   example:"John"`
+	LastName    string `json:"lastName"    example:"Doe"`
 }
 
 // RegisterUser godoc
@@ -117,7 +117,11 @@ func (h *AuthHandler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if req.Nickname == "" || req.Password == "" || req.PhoneNumber == "" || req.FirstName == "" || req.LastName == "" {
-		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{Message: "nickname, password, phoneNumber, firstName and lastName are required"})
+		httputil.JSON(
+			w,
+			http.StatusBadRequest,
+			ErrorResponse{Message: "nickname, password, phoneNumber, firstName and lastName are required"},
+		)
 		return
 	}
 

@@ -45,7 +45,6 @@ func LoadConfig() (Config, error) {
 	}
 
 	log.Info().Str("env", Environment()).Msg("loaded config successfully")
-	fmt.Printf(">> CFG: %+v\n", cfg)
 
 	return cfg, nil
 }

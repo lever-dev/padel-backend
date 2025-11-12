@@ -51,8 +51,9 @@ var serveCmd = &cobra.Command{
 
 		reservationHandler := httpPkg.NewReservationHandler(reservationService)
 		authHandler := httpPkg.NewAuthHandler(authService)
+		authMiddleware := httpPkg.NewAuthMiddleware(authService)
 
-		router := httpPkg.NewRouter(reservationHandler, authHandler)
+		router := httpPkg.NewRouter(reservationHandler, authHandler, authMiddleware)
 
 		httpServer := http.Server{
 			Addr:              cfg.HTTPServerAddr,

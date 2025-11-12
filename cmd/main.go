@@ -16,6 +16,9 @@ var rootCmd = &cobra.Command{
 // @title Padel Backend API
 // @version 1.0
 // @description API documentation for the Padel Backend service.
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)

@@ -107,6 +107,11 @@ const docTemplate = `{
         },
         "/v1/organizations/{orgID}/courts/{courtID}/reservations": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns all reservations for a court within a time range",
                 "produces": [
                     "application/json"
@@ -162,65 +167,15 @@ const docTemplate = `{
                         "description": "Internal Server Error"
                     }
                 }
-            },
-            "post": {
-                "description": "Creates a reservation for the specified organization and court.",
-                "consumes": [
-                    "application/json"
-                ],
-                "tags": [
-                    "reservations"
-                ],
-                "summary": "Reserve a court",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Organization ID",
-                        "name": "orgID",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Court ID",
-                        "name": "courtID",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Reservation payload",
-                        "name": "reservation",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_controllers_http.ReserveCourtRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
-                        "schema": {
-                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error"
-                    }
-                }
             }
         },
         "/v1/organizations/{orgID}/courts/{courtID}/reservations/{reservationID}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Retrieves the reservation with the specified ID.",
                 "produces": [
                     "application/json"
@@ -274,6 +229,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Cancels the reservation with the specified ID.",
                 "consumes": [
                     "application/json"
@@ -312,6 +272,68 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/v1/organizations/{orgID}/courts/{courtID}/reserve": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a reservation for the specified organization and court.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reservations"
+                ],
+                "summary": "Reserve a court",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Court ID",
+                        "name": "courtID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Reservation payload",
+                        "name": "reservation",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.ReserveCourtRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
                         "schema": {
                             "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
                         }
@@ -471,18 +493,25 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "endTime": {
-                    "description": "EndTime is the reservation end timestamp in RFC3339 format\nexample: 2025-11-04T19:45Z\nformat: date-time",
+                    "description": "EndTime is the reservation end timestamp in RFC3339 format\nexample: 2025-11-04T19:45\nformat: date-time",
                     "type": "string",
                     "format": "date-time",
-                    "example": "2025-11-04T19:45Z"
+                    "example": "2025-11-04T19:45"
                 },
                 "startTime": {
-                    "description": "StartTime is the reservation start timestamp in RFC3339 format\nexample: 2025-11-04T18:30Z\nformat: date-time",
+                    "description": "StartTime is the reservation start timestamp in RFC3339 format\nexample: 2025-11-04T18:30\nformat: date-time",
                     "type": "string",
                     "format": "date-time",
-                    "example": "2025-11-04T18:30Z"
+                    "example": "2025-11-04T18:30"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`

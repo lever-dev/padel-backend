@@ -13,6 +13,8 @@ import (
 	"github.com/lever-dev/padel-backend/internal/config"
 	httpPkg "github.com/lever-dev/padel-backend/internal/controllers/http"
 	reservationRepo "github.com/lever-dev/padel-backend/internal/repositories/reservation"
+	"github.com/lever-dev/padel-backend/internal/repositories/users"
+	"github.com/lever-dev/padel-backend/internal/services/auth"
 	"github.com/lever-dev/padel-backend/internal/services/reservation"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -34,21 +36,28 @@ var serveCmd = &cobra.Command{
 
 		ctx := context.Background()
 
-		reservationRepo := reservationRepo.NewRepository(cfg.PostgresConnectionURL)
-
+		reservationRepo := reservationRepo.NewRepository(cfg.Postgres.ConnectionURL)
 		if err := reservationRepo.Connect(ctx); err != nil {
 			log.Fatal().Err(err).Msg("failed to connect to postgres")
 		}
 
+		usersRepo := users.NewRepository(cfg.Postgres.ConnectionURL)
+		if err := usersRepo.Connect(ctx); err != nil {
+			log.Fatal().Err(err).Msg("failed to connect to postgres")
+		}
+
 		reservationService := reservation.NewService(reservationRepo, reservation.NewLocalLocker())
+		authService := auth.NewService(usersRepo)
 
 		reservationHandler := httpPkg.NewReservationHandler(reservationService)
+		authHandler := httpPkg.NewAuthHandler(authService)
+		authMiddleware := httpPkg.NewAuthMiddleware(authService)
 
-		handler := httpPkg.NewRouter(reservationHandler)
+		router := httpPkg.NewRouter(reservationHandler, authHandler, authMiddleware)
 
 		httpServer := http.Server{
 			Addr:              cfg.HTTPServerAddr,
-			Handler:           handler,
+			Handler:           router,
 			ReadHeaderTimeout: 5 * time.Second,
 		}
 
@@ -78,6 +87,7 @@ var serveCmd = &cobra.Command{
 		}
 
 		reservationRepo.Close()
+		usersRepo.Close()
 
 		log.Info().Msg("Bye Bye !")
 

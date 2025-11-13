@@ -11,7 +11,11 @@ import (
 	swagger "github.com/swaggo/http-swagger"
 )
 
-func NewRouter(reservationHandler *ReservationHandler) http.Handler {
+func NewRouter(
+	reservationHandler *ReservationHandler,
+	authHandler *AuthHandler,
+	authMiddleware func(http.Handler) http.Handler,
+) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID, middleware.RealIP, middleware.Recoverer)
 	r.Use(middleware.Timeout(15 * time.Second))
@@ -24,14 +28,22 @@ func NewRouter(reservationHandler *ReservationHandler) http.Handler {
 	r.Get("/_docs/*", swagger.Handler())
 
 	r.Route("/v1", func(r chi.Router) {
-		// POST /v1/organizations/{orgID}/courts/{courtID}/reservations
-		r.Post("/organizations/{orgID}/courts/{courtID}", reservationHandler.ReserveCourt)
-		r.Delete(
-			"/organizations/{orgID}/courts/{courtID}/reservations/{reservationID}",
-			reservationHandler.CancelReservation,
-		)
-		r.Get("/organizations/{orgID}/courts/{courtID}", reservationHandler.ListReservations)
-		r.Get("/organizations/{orgID}/courts/{courtID}/reservations/{reservationID}", reservationHandler.GetReservation)
+		r.Group(func(r chi.Router) {
+			if authMiddleware != nil {
+				r.Use(authMiddleware)
+			}
+
+			r.Post("/organizations/{orgID}/courts/{courtID}/reserve", reservationHandler.ReserveCourt)
+			r.Delete(
+				"/organizations/{orgID}/courts/{courtID}/reservations/{reservationID}",
+				reservationHandler.CancelReservation,
+			)
+			r.Get("/organizations/{orgID}/courts/{courtID}/reservations", reservationHandler.ListReservations)
+			r.Get("/organizations/{orgID}/courts/{courtID}/reservations/{reservationID}", reservationHandler.GetReservation)
+		})
+
+		r.Post("/auth/register", authHandler.RegisterUser)
+		r.Post("/auth/login", authHandler.Login)
 	})
 
 	return r

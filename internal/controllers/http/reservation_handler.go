@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -32,14 +33,54 @@ func NewReservationHandler(service ReservationService) *ReservationHandler {
 
 type ReserveCourtRequest struct {
 	// StartTime is the reservation start timestamp in RFC3339 format
-	// example: 2025-11-04T18:30Z
+	// example: 2025-11-04T18:30
 	// format: date-time
-	StartTime time.Time `json:"startTime" example:"2025-11-04T18:30Z" format:"date-time"`
+	StartTime time.Time `json:"startTime" example:"2025-11-04T18:30" format:"date-time"`
 
 	// EndTime is the reservation end timestamp in RFC3339 format
-	// example: 2025-11-04T19:45Z
+	// example: 2025-11-04T19:45
 	// format: date-time
-	EndTime time.Time `json:"endTime" example:"2025-11-04T19:45Z" format:"date-time"`
+	EndTime time.Time `json:"endTime" example:"2025-11-04T19:45" format:"date-time"`
+}
+
+func (r *ReserveCourtRequest) UnmarshalJSON(data []byte) error {
+	// Define a temporary structure with strings
+	var raw struct {
+		StartTime string `json:"startTime"`
+		EndTime   string `json:"endTime"`
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return fmt.Errorf("decode request: %w", err)
+	}
+
+	parse := func(s string) (time.Time, error) {
+		layouts := []string{
+			time.RFC3339,       // 2025-11-04T19:45:00Z or +05:00
+			"2006-01-02T15:04", // 2025-11-04T19:45 (no seconds, no TZ)
+		}
+		var lastErr error
+		for _, layout := range layouts {
+			if t, err := time.Parse(layout, s); err == nil {
+				return t, nil
+			} else {
+				lastErr = err
+			}
+		}
+		return time.Time{}, fmt.Errorf("invalid time format %q: %w", s, lastErr)
+	}
+
+	var err error
+	r.StartTime, err = parse(raw.StartTime)
+	if err != nil {
+		return fmt.Errorf("parse startTime: %w", err)
+	}
+
+	r.EndTime, err = parse(raw.EndTime)
+	if err != nil {
+		return fmt.Errorf("parse endTime: %w", err)
+	}
+
+	return nil
 }
 
 type ReserveCourtResponse struct{}
@@ -55,6 +96,7 @@ type ErrorResponse struct {
 // @Summary Reserve a court
 // @Description Creates a reservation for the specified organization and court.
 // @Tags reservations
+// @Security BearerAuth
 // @Param orgID path string true "Organization ID"
 // @Param courtID path string true "Court ID"
 // @Accept json
@@ -63,7 +105,7 @@ type ErrorResponse struct {
 // @Failure 400 {object} ErrorResponse
 // @Failure 409 {object} ErrorResponse
 // @Failure 500
-// @Router /v1/organizations/{orgID}/courts/{courtID}/reservations [post]
+// @Router /v1/organizations/{orgID}/courts/{courtID}/reserve [post]
 func (h *ReservationHandler) ReserveCourt(w http.ResponseWriter, r *http.Request) {
 	orgID := chi.URLParam(r, "orgID")
 	courtID := chi.URLParam(r, "courtID")
@@ -142,6 +184,7 @@ type CancelReservationRequest struct {
 // @Summary Cancel a reservation
 // @Description Cancels the reservation with the specified ID.
 // @Tags reservations
+// @Security BearerAuth
 // @Param reservationID path string true "Reservation ID"
 // @Accept json
 // @Param cancel body CancelReservationRequest true "Cancellation payload"
@@ -214,6 +257,7 @@ type ListReservationsResponse struct {
 // @Summary List reservations
 // @Description Returns all reservations for a court within a time range
 // @Tags reservations
+// @Security BearerAuth
 // @Param orgID path string true "Organization ID"
 // @Param courtID path string true "Court ID"
 // @Param from query string true "Start time in RFC3339 format" format:"date-time"
@@ -304,6 +348,7 @@ func (h *ReservationHandler) ListReservations(w http.ResponseWriter, r *http.Req
 // @Summary Get a reservation
 // @Description Retrieves the reservation with the specified ID.
 // @Tags reservations
+// @Security BearerAuth
 // @Param orgID path string true "Organization ID"
 // @Param courtID path string true "Court ID"
 // @Param reservationID path string true "Reservation ID"

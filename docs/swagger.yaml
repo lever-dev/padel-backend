@@ -21,6 +21,58 @@ definitions:
           $ref: '#/definitions/internal_controllers_http.ReservationResponse'
         type: array
     type: object
+  internal_controllers_http.LoginRequest:
+    properties:
+      nickname:
+        example: johnny
+        type: string
+      password:
+        example: super-secret
+        type: string
+    type: object
+  internal_controllers_http.LoginResponse:
+    properties:
+      token:
+        example: jwt-token
+        type: string
+    type: object
+  internal_controllers_http.RegisterUserRequest:
+    properties:
+      firstName:
+        example: John
+        type: string
+      lastName:
+        description: LastName of the registering user
+        example: Doe
+        type: string
+      nickname:
+        example: johnny
+        type: string
+      password:
+        example: super-secret
+        type: string
+      phoneNumber:
+        example: "+77010000000"
+        type: string
+    type: object
+  internal_controllers_http.RegisterUserResponse:
+    properties:
+      firstName:
+        example: John
+        type: string
+      id:
+        example: user-123
+        type: string
+      lastName:
+        example: Doe
+        type: string
+      nickname:
+        example: johnny
+        type: string
+      phoneNumber:
+        example: "+77010000000"
+        type: string
+    type: object
   internal_controllers_http.ReservationResponse:
     properties:
       cancelledBy:
@@ -56,17 +108,17 @@ definitions:
       endTime:
         description: |-
           EndTime is the reservation end timestamp in RFC3339 format
-          example: 2025-11-04T19:45Z
+          example: 2025-11-04T19:45
           format: date-time
-        example: 2025-11-04T19:45Z
+        example: 2025-11-04T19:45
         format: date-time
         type: string
       startTime:
         description: |-
           StartTime is the reservation start timestamp in RFC3339 format
-          example: 2025-11-04T18:30Z
+          example: 2025-11-04T18:30
           format: date-time
-        example: 2025-11-04T18:30Z
+        example: 2025-11-04T18:30
         format: date-time
         type: string
     type: object
@@ -76,6 +128,64 @@ info:
   title: Padel Backend API
   version: "1.0"
 paths:
+  /v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login payload
+        in: body
+        name: login
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controllers_http.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controllers_http.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+      summary: Login with nickname and password
+      tags:
+      - auth
+  /v1/auth/register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Registration payload
+        in: body
+        name: register
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controllers_http.RegisterUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_controllers_http.RegisterUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+      summary: Register a new user
+      tags:
+      - auth
   /v1/organizations/{orgID}/courts/{courtID}/reservations:
     get:
       description: Returns all reservations for a court within a time range
@@ -113,44 +223,9 @@ paths:
             $ref: '#/definitions/internal_controllers_http.ErrorResponse'
         "500":
           description: Internal Server Error
+      security:
+      - BearerAuth: []
       summary: List reservations
-      tags:
-      - reservations
-    post:
-      consumes:
-      - application/json
-      description: Creates a reservation for the specified organization and court.
-      parameters:
-      - description: Organization ID
-        in: path
-        name: orgID
-        required: true
-        type: string
-      - description: Court ID
-        in: path
-        name: courtID
-        required: true
-        type: string
-      - description: Reservation payload
-        in: body
-        name: reservation
-        required: true
-        schema:
-          $ref: '#/definitions/internal_controllers_http.ReserveCourtRequest'
-      responses:
-        "200":
-          description: OK
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
-        "500":
-          description: Internal Server Error
-      summary: Reserve a court
       tags:
       - reservations
   /v1/organizations/{orgID}/courts/{courtID}/reservations/{reservationID}:
@@ -183,6 +258,8 @@ paths:
             $ref: '#/definitions/internal_controllers_http.ErrorResponse'
         "500":
           description: Internal Server Error
+      security:
+      - BearerAuth: []
       summary: Cancel a reservation
       tags:
       - reservations
@@ -219,7 +296,54 @@ paths:
           description: Not Found
         "500":
           description: Internal Server Error
+      security:
+      - BearerAuth: []
       summary: Get a reservation
       tags:
       - reservations
+  /v1/organizations/{orgID}/courts/{courtID}/reserve:
+    post:
+      consumes:
+      - application/json
+      description: Creates a reservation for the specified organization and court.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Court ID
+        in: path
+        name: courtID
+        required: true
+        type: string
+      - description: Reservation payload
+        in: body
+        name: reservation
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controllers_http.ReserveCourtRequest'
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: Reserve a court
+      tags:
+      - reservations
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

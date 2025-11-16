@@ -7,12 +7,45 @@ definitions:
           example: "user_123"
         type: string
     type: object
+  internal_controllers_http.CourtResponse:
+    properties:
+      createdAt:
+        example: "2025-11-01T10:00:00Z"
+        format: date-time
+        type: string
+      id:
+        example: court-123
+        type: string
+      name:
+        example: Court 1
+        type: string
+      organizationId:
+        example: org-456
+        type: string
+      updatedAt:
+        example: "2025-11-01T10:00:00Z"
+        format: date-time
+        type: string
+    type: object
+  internal_controllers_http.CreateCourtRequest:
+    properties:
+      name:
+        example: Court 1
+        type: string
+    type: object
   internal_controllers_http.ErrorResponse:
     properties:
       message:
         description: Message provides a human-readable description of the error.
         example: invalid JSON body
         type: string
+    type: object
+  internal_controllers_http.ListCourtsResponse:
+    properties:
+      courts:
+        items:
+          $ref: '#/definitions/internal_controllers_http.CourtResponse'
+        type: array
     type: object
   internal_controllers_http.ListReservationsResponse:
     properties:
@@ -122,6 +155,12 @@ definitions:
         format: date-time
         type: string
     type: object
+  internal_controllers_http.UpdateCourtRequest:
+    properties:
+      name:
+        example: Updated Court Name
+        type: string
+    type: object
 info:
   contact: {}
   description: API documentation for the Padel Backend service.
@@ -186,6 +225,177 @@ paths:
       summary: Register a new user
       tags:
       - auth
+  /v1/organizations/{orgID}/courts:
+    get:
+      description: Returns all courts belonging to the specified organization
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controllers_http.ListCourtsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: List all courts for an organization
+      tags:
+      - courts
+    post:
+      consumes:
+      - application/json
+      description: Creates a new court for the specified organization
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Court creation payload
+        in: body
+        name: court
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controllers_http.CreateCourtRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_controllers_http.CourtResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: Create a new court
+      tags:
+      - courts
+  /v1/organizations/{orgID}/courts/{courtID}:
+    delete:
+      description: Deletes a court by its ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Court ID
+        in: path
+        name: courtID
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: Delete a court
+      tags:
+      - courts
+    get:
+      description: Returns a single court by its ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Court ID
+        in: path
+        name: courtID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controllers_http.CourtResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: Get a court by ID
+      tags:
+      - courts
+    put:
+      consumes:
+      - application/json
+      description: Updates an existing court's information
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Court ID
+        in: path
+        name: courtID
+        required: true
+        type: string
+      - description: Court update payload
+        in: body
+        name: court
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controllers_http.UpdateCourtRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controllers_http.CourtResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: Update a court
+      tags:
+      - courts
   /v1/organizations/{orgID}/courts/{courtID}/reservations:
     get:
       description: Returns all reservations for a court within a time range

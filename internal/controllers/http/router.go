@@ -14,6 +14,7 @@ import (
 func NewRouter(
 	reservationHandler *ReservationHandler,
 	authHandler *AuthHandler,
+	courtHandler *CourtHandler,
 	authMiddleware func(http.Handler) http.Handler,
 ) http.Handler {
 	r := chi.NewRouter()
@@ -33,13 +34,22 @@ func NewRouter(
 				r.Use(authMiddleware)
 			}
 
-			r.Post("/organizations/{orgID}/courts/{courtID}/reserve", reservationHandler.ReserveCourt)
+			r.Post("/organizations/{orgID}/courts/{courtID}/reservations", reservationHandler.ReserveCourt)
 			r.Delete(
 				"/organizations/{orgID}/courts/{courtID}/reservations/{reservationID}",
 				reservationHandler.CancelReservation,
 			)
 			r.Get("/organizations/{orgID}/courts/{courtID}/reservations", reservationHandler.ListReservations)
-			r.Get("/organizations/{orgID}/courts/{courtID}/reservations/{reservationID}", reservationHandler.GetReservation)
+			r.Get(
+				"/organizations/{orgID}/courts/{courtID}/reservations/{reservationID}",
+				reservationHandler.GetReservation,
+			)
+
+			r.Post("/organizations/{orgID}/courts", courtHandler.CreateCourt)
+			r.Get("/organizations/{orgID}/courts", courtHandler.ListCourts)
+			r.Get("/organizations/{orgID}/courts/{courtID}", courtHandler.GetCourt)
+			r.Put("/organizations/{orgID}/courts/{courtID}", courtHandler.UpdateCourt)
+			r.Delete("/organizations/{orgID}/courts/{courtID}", courtHandler.DeleteCourt)
 		})
 
 		r.Post("/auth/register", authHandler.RegisterUser)

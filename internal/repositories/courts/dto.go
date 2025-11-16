@@ -1,8 +1,9 @@
 package court
 
 import (
-	"github.com/lever-dev/padel-backend/internal/entities"
 	"time"
+
+	"github.com/lever-dev/padel-backend/internal/entities"
 )
 
 type dto struct {
@@ -18,6 +19,7 @@ func newDTO(c *entities.Court) dto {
 		ID:             c.ID,
 		OrganizationID: c.OrganizationID,
 		Name:           c.Name,
+		CreatedAt:      c.CreatedAt,
 		UpdatedAt:      c.UpdatedAt,
 	}
 }

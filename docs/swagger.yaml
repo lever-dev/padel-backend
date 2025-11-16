@@ -33,6 +33,18 @@ definitions:
         example: Court 1
         type: string
     type: object
+  internal_controllers_http.CreateCourtResponse:
+    properties:
+      id:
+        example: court-123
+        type: string
+      name:
+        example: Court 1
+        type: string
+      organizationId:
+        example: org-456
+        type: string
+    type: object
   internal_controllers_http.ErrorResponse:
     properties:
       message:
@@ -274,7 +286,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_controllers_http.CourtResponse'
+            $ref: '#/definitions/internal_controllers_http.CreateCourtResponse'
         "400":
           description: Bad Request
           schema:
@@ -287,37 +299,6 @@ paths:
       tags:
       - courts
   /v1/organizations/{orgID}/courts/{courtID}:
-    delete:
-      description: Deletes a court by its ID
-      parameters:
-      - description: Organization ID
-        in: path
-        name: orgID
-        required: true
-        type: string
-      - description: Court ID
-        in: path
-        name: courtID
-        required: true
-        type: string
-      responses:
-        "204":
-          description: No Content
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
-        "500":
-          description: Internal Server Error
-      security:
-      - BearerAuth: []
-      summary: Delete a court
-      tags:
-      - courts
     get:
       description: Returns a single court by its ID
       parameters:

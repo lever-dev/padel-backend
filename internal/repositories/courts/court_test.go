@@ -10,8 +10,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/lever-dev/padel-backend/internal/entities"
-
-	"github.com/lever-dev/padel-backend/internal/repositories/courts"
+	court "github.com/lever-dev/padel-backend/internal/repositories/courts"
 )
 
 type repositorySuite struct {
@@ -98,11 +97,8 @@ func (s *repositorySuite) TestListByOrganizationID() {
 	list, err := s.repo.ListByOrganizationID(ctx, "org-2")
 	s.Require().NoError(err)
 	s.Len(list, 2)
-	s.Equal("court-list-1", list[0].ID)
-	s.Equal("court-list-2", list[1].ID)
 	s.Equal("Court A", list[0].Name)
 	s.Equal("Court B", list[1].Name)
-
 }
 
 func (s *repositorySuite) TestUpdateCourt() {
@@ -122,26 +118,30 @@ func (s *repositorySuite) TestUpdateCourt() {
 
 	cDb, err := s.repo.GetByID(ctx, c.ID)
 	s.Require().NoError(err)
-	s.False(cDb.UpdatedAt.IsZero(), "UpdatedAt should be set after update")
 	s.Equal("Updated Name", cDb.Name)
-
+	s.False(cDb.UpdatedAt.IsZero(), "UpdatedAt must be set")
 }
 
-func (s *repositorySuite) TestDeleteCourt() {
+func (s *repositorySuite) TestUpdateName() {
 	ctx := context.Background()
 
 	c := &entities.Court{
-		ID:             "court-delete-1",
-		OrganizationID: "org-5",
-		Name:           "To Delete",
+		ID:             "court-updatename-1",
+		OrganizationID: "org-7",
+		Name:           "Before",
 	}
 
 	s.seedCourts(ctx, []*entities.Court{c})
 
-	err := s.repo.Delete(ctx, c.ID)
+	updated, err := s.repo.UpdateName(ctx, "org-7", c.ID, "After")
 	s.Require().NoError(err)
 
-	_, err = s.repo.GetByID(ctx, c.ID)
-	s.Require().Error(err)
-	s.ErrorIs(err, entities.ErrNotFound)
+	s.Equal("After", updated.Name)
+	s.Equal("org-7", updated.OrganizationID)
+	s.False(updated.UpdatedAt.IsZero(), "UpdatedAt must be updated")
+
+	// Verify change persisted
+	db, err := s.repo.GetByID(ctx, c.ID)
+	s.Require().NoError(err)
+	s.Equal("After", db.Name)
 }

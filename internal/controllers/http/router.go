@@ -49,7 +49,6 @@ func NewRouter(
 			r.Get("/organizations/{orgID}/courts", courtHandler.ListCourts)
 			r.Get("/organizations/{orgID}/courts/{courtID}", courtHandler.GetCourt)
 			r.Put("/organizations/{orgID}/courts/{courtID}", courtHandler.UpdateCourt)
-			r.Delete("/organizations/{orgID}/courts/{courtID}", courtHandler.DeleteCourt)
 		})
 
 		r.Post("/auth/register", authHandler.RegisterUser)

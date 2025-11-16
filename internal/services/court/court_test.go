@@ -147,7 +147,7 @@ func (s *ServiceSuite) TestGetByID() {
 					GetByID(ctx, courtID).
 					Return(&entities.Court{
 						ID:             courtID,
-						OrganizationID: "org-999", // Другая организация!
+						OrganizationID: "org-999", // другая организация
 						Name:           "Court A",
 					}, nil)
 			},
@@ -364,44 +364,69 @@ func (s *ServiceSuite) TestUpdate() {
 	}
 }
 
-func (s *ServiceSuite) TestDelete() {
+func (s *ServiceSuite) TestUpdateName() {
 	ctx := context.Background()
+	orgID := "org-1"
+	courtID := "court-1"
+	newName := "New Court Name"
 
 	tests := []struct {
 		name       string
+		orgID      string
 		courtID    string
+		newName    string
 		setupMocks func(mockRepo *mocks.MockCourtsRepository)
+		wantCourt  *entities.Court
 		wantErr    error
 	}{
 		{
 			name:    "success",
-			courtID: "court-1",
+			orgID:   orgID,
+			courtID: courtID,
+			newName: newName,
 			setupMocks: func(mockRepo *mocks.MockCourtsRepository) {
 				mockRepo.EXPECT().
-					Delete(ctx, "court-1").
-					Return(nil)
+					UpdateName(ctx, orgID, courtID, newName).
+					Return(&entities.Court{
+						ID:             courtID,
+						OrganizationID: orgID,
+						Name:           newName,
+						CreatedAt:      time.Now(),
+						UpdatedAt:      time.Now(),
+					}, nil)
+			},
+			wantCourt: &entities.Court{
+				ID:             courtID,
+				OrganizationID: orgID,
+				Name:           newName,
 			},
 			wantErr: nil,
 		},
 		{
 			name:    "court not found",
-			courtID: "non-existent",
+			orgID:   orgID,
+			courtID: courtID,
+			newName: newName,
 			setupMocks: func(mockRepo *mocks.MockCourtsRepository) {
 				mockRepo.EXPECT().
-					Delete(ctx, "non-existent").
-					Return(entities.ErrNotFound)
+					UpdateName(ctx, orgID, courtID, newName).
+					Return(nil, entities.ErrNotFound)
 			},
-			wantErr: entities.ErrNotFound,
+			wantCourt: nil,
+			wantErr:   entities.ErrNotFound,
 		},
 		{
 			name:    "repository error",
-			courtID: "court-1",
+			orgID:   orgID,
+			courtID: courtID,
+			newName: newName,
 			setupMocks: func(mockRepo *mocks.MockCourtsRepository) {
 				mockRepo.EXPECT().
-					Delete(ctx, "court-1").
-					Return(fmt.Errorf("db error"))
+					UpdateName(ctx, orgID, courtID, newName).
+					Return(nil, fmt.Errorf("db error"))
 			},
-			wantErr: fmt.Errorf("db error"),
+			wantCourt: nil,
+			wantErr:   fmt.Errorf("db error"),
 		},
 	}
 
@@ -412,17 +437,22 @@ func (s *ServiceSuite) TestDelete() {
 
 			tt.setupMocks(mockRepo)
 
-			err := service.Delete(ctx, tt.courtID)
+			result, err := service.UpdateName(ctx, tt.orgID, tt.courtID, tt.newName)
 
 			if tt.wantErr != nil {
 				s.Error(err)
 				if errors.Is(tt.wantErr, entities.ErrNotFound) {
 					s.ErrorIs(err, entities.ErrNotFound)
 				} else {
-					s.Contains(err.Error(), "delete court")
+					s.Contains(err.Error(), "update court name")
 				}
+				s.Nil(result)
 			} else {
 				s.NoError(err)
+				s.NotNil(result)
+				s.Equal(tt.wantCourt.ID, result.ID)
+				s.Equal(tt.wantCourt.OrganizationID, result.OrganizationID)
+				s.Equal(tt.wantCourt.Name, result.Name)
 			}
 		})
 	}

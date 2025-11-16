@@ -49,20 +49,6 @@ func (mr *MockCourtsRepositoryMockRecorder) Create(ctx, court interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockCourtsRepository)(nil).Create), ctx, court)
 }
 
-// Delete mocks base method.
-func (m *MockCourtsRepository) Delete(ctx context.Context, courtID string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", ctx, courtID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Delete indicates an expected call of Delete.
-func (mr *MockCourtsRepositoryMockRecorder) Delete(ctx, courtID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockCourtsRepository)(nil).Delete), ctx, courtID)
-}
-
 // GetByID mocks base method.
 func (m *MockCourtsRepository) GetByID(ctx context.Context, courtID string) (*entities.Court, error) {
 	m.ctrl.T.Helper()
@@ -105,4 +91,19 @@ func (m *MockCourtsRepository) Update(ctx context.Context, court *entities.Court
 func (mr *MockCourtsRepositoryMockRecorder) Update(ctx, court interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockCourtsRepository)(nil).Update), ctx, court)
+}
+
+// UpdateName mocks base method.
+func (m *MockCourtsRepository) UpdateName(ctx context.Context, organizationID, courtID, name string) (*entities.Court, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateName", ctx, organizationID, courtID, name)
+	ret0, _ := ret[0].(*entities.Court)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateName indicates an expected call of UpdateName.
+func (mr *MockCourtsRepositoryMockRecorder) UpdateName(ctx, organizationID, courtID, name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateName", reflect.TypeOf((*MockCourtsRepository)(nil).UpdateName), ctx, organizationID, courtID, name)
 }

@@ -177,26 +177,49 @@ const updateCourtQuery = `
 	WHERE id = $4
 `
 
-func (r *Repository) Delete(ctx context.Context, id string) error {
+func (r *Repository) UpdateName(
+	ctx context.Context,
+	organizationID string,
+	courtID string,
+	name string,
+) (*entities.Court, error) {
 	if r.pool == nil {
-		return fmt.Errorf("not connected to pool")
+		return nil, fmt.Errorf("not connected to pool")
 	}
 
-	tag, err := r.pool.Exec(ctx, deleteCourtQuery, id)
+	row := r.pool.QueryRow(
+		ctx,
+		updateCourtNameQuery,
+		name,
+		organizationID,
+		courtID,
+	)
+
+	crt, err := scan(row)
 	if err != nil {
-		return fmt.Errorf("exec: %w", err)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, entities.ErrNotFound
+		}
+
+		return nil, fmt.Errorf("scan court: %w", err)
 	}
 
-	if tag.RowsAffected() == 0 {
-		return entities.ErrNotFound
-	}
-
-	return nil
+	return &crt, nil
 }
 
-const deleteCourtQuery = `
-	DELETE FROM courts
-	WHERE id = $1
+const updateCourtNameQuery = `
+	UPDATE courts
+	SET
+		name = $1,
+		updated_at = NOW()
+	WHERE id = $3
+	  AND organization_id = $2
+	RETURNING
+		id,
+		organization_id,
+		name,
+		created_at,
+		updated_at
 `
 
 type rowScanner interface {

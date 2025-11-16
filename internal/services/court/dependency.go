@@ -13,5 +13,5 @@ type CourtsRepository interface {
 	ListByOrganizationID(ctx context.Context, organizationID string) ([]entities.Court, error)
 	GetByID(ctx context.Context, courtID string) (*entities.Court, error)
 	Update(ctx context.Context, court *entities.Court) error
-	Delete(ctx context.Context, courtID string) error
+	UpdateName(ctx context.Context, organizationID, courtID, name string) (*entities.Court, error)
 }

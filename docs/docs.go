@@ -186,7 +186,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_controllers_http.CourtResponse"
+                            "$ref": "#/definitions/internal_controllers_http.CreateCourtResponse"
                         }
                     },
                     "400": {
@@ -304,54 +304,6 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/internal_controllers_http.CourtResponse"
                         }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error"
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Deletes a court by its ID",
-                "tags": [
-                    "courts"
-                ],
-                "summary": "Delete a court",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Organization ID",
-                        "name": "orgID",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Court ID",
-                        "name": "courtID",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -654,6 +606,23 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "Court 1"
+                }
+            }
+        },
+        "internal_controllers_http.CreateCourtResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "court-123"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Court 1"
+                },
+                "organizationId": {
+                    "type": "string",
+                    "example": "org-456"
                 }
             }
         },

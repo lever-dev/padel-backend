@@ -2,6 +2,7 @@ package court
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/lever-dev/padel-backend/internal/entities"
@@ -39,7 +40,7 @@ func (s *Service) GetByID(ctx context.Context, organizationID, courtID string) (
 	}
 
 	if court.OrganizationID != organizationID {
-		return nil, entities.ErrNotFound
+		return nil, fmt.Errorf("input organization ids dont match for court: %s: %w", courtID, entities.ErrNotFound)
 	}
 
 	return court, nil
@@ -53,10 +54,15 @@ func (s *Service) Update(ctx context.Context, court *entities.Court) error {
 	return nil
 }
 
-func (s *Service) Delete(ctx context.Context, courtID string) error {
-	err := s.courtsRepo.Delete(ctx, courtID)
+func (s *Service) UpdateName(ctx context.Context, organizationID string, courtID string, name string) (*entities.Court, error) {
+	court, err := s.courtsRepo.UpdateName(ctx, organizationID, courtID, name)
 	if err != nil {
-		return fmt.Errorf("delete court: %w", err)
+		if errors.Is(err, entities.ErrNotFound) {
+			return nil, entities.ErrNotFound
+		}
+
+		return nil, fmt.Errorf("update court name: %w", err)
 	}
-	return nil
+
+	return court, nil
 }

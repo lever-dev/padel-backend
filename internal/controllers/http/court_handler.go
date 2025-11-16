@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 	"github.com/lever-dev/padel-backend/internal/entities"
 	"github.com/lever-dev/padel-backend/pkg/httputil"
 	"github.com/rs/zerolog/log"
@@ -18,8 +17,7 @@ type CourtService interface {
 	Create(ctx context.Context, court *entities.Court) error
 	GetByID(ctx context.Context, organizationID, courtID string) (*entities.Court, error)
 	ListByOrganizationID(ctx context.Context, organizationID string) ([]entities.Court, error)
-	Update(ctx context.Context, court *entities.Court) error
-	Delete(ctx context.Context, courtID string) error
+	UpdateName(ctx context.Context, organizationID, courtID, name string) (*entities.Court, error)
 }
 
 type CourtHandler struct {
@@ -37,13 +35,20 @@ type CreateCourtRequest struct {
 	Name string `json:"name" example:"Court 1"`
 }
 
+// swagger:model CreateCourtResponse
+type CreateCourtResponse struct {
+	ID             string `json:"id"             example:"court-123"`
+	OrganizationID string `json:"organizationId" example:"org-456"`
+	Name           string `json:"name"           example:"Court 1"`
+}
+
 // swagger:model CourtResponse
 type CourtResponse struct {
-	ID             string    `json:"id"             example:"court-123"`
-	OrganizationID string    `json:"organizationId" example:"org-456"`
-	Name           string    `json:"name"           example:"Court 1"`
-	CreatedAt      time.Time `json:"createdAt"      example:"2025-11-01T10:00:00Z" format:"date-time"`
-	UpdatedAt      time.Time `json:"updatedAt"      example:"2025-11-01T10:00:00Z" format:"date-time"`
+	ID             string     `json:"id"             example:"court-123"`
+	OrganizationID string     `json:"organizationId" example:"org-456"`
+	Name           string     `json:"name"           example:"Court 1"`
+	CreatedAt      time.Time  `json:"createdAt"      example:"2025-11-01T10:00:00Z" format:"date-time"`
+	UpdatedAt      *time.Time `json:"updatedAt,omitempty" example:"2025-11-01T10:00:00Z" format:"date-time"`
 }
 
 // swagger:model ListCourtsResponse
@@ -65,7 +70,7 @@ type UpdateCourtRequest struct {
 // @Accept json
 // @Produce json
 // @Param court body CreateCourtRequest true "Court creation payload"
-// @Success 201 {object} CourtResponse
+// @Success 201 {object} CreateCourtResponse
 // @Failure 400 {object} ErrorResponse
 // @Failure 500
 // @Router /v1/organizations/{orgID}/courts [post]
@@ -93,29 +98,18 @@ func (h *CourtHandler) CreateCourt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	court := &entities.Court{
-		ID:             uuid.New().String(),
-		OrganizationID: orgID,
-		Name:           req.Name,
-		CreatedAt:      time.Now().UTC(),
-		UpdatedAt:      time.Now().UTC(),
-	}
+	court := entities.NewCourt(orgID, req.Name)
 
 	if err := h.courtService.Create(r.Context(), court); err != nil {
 		log.Error().Err(err).Str("orgID", orgID).Msg("failed to create court")
-		httputil.JSON(w, http.StatusInternalServerError, ErrorResponse{
-			Message: "internal server error",
-		})
-
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	resp := CourtResponse{
+	resp := CreateCourtResponse{
 		ID:             court.ID,
 		OrganizationID: court.OrganizationID,
 		Name:           court.Name,
-		CreatedAt:      court.CreatedAt,
-		UpdatedAt:      court.UpdatedAt,
 	}
 
 	httputil.JSON(w, http.StatusCreated, resp)
@@ -174,7 +168,10 @@ func (h *CourtHandler) GetCourt(w http.ResponseWriter, r *http.Request) {
 		OrganizationID: court.OrganizationID,
 		Name:           court.Name,
 		CreatedAt:      court.CreatedAt,
-		UpdatedAt:      court.UpdatedAt,
+	}
+
+	if !court.UpdatedAt.IsZero() {
+		resp.UpdatedAt = &court.UpdatedAt
 	}
 
 	httputil.JSON(w, http.StatusOK, resp)
@@ -219,13 +216,18 @@ func (h *CourtHandler) ListCourts(w http.ResponseWriter, r *http.Request) {
 
 	dtos := make([]CourtResponse, 0, len(courts))
 	for _, c := range courts {
-		dtos = append(dtos, CourtResponse{
+		resp := CourtResponse{
 			ID:             c.ID,
 			OrganizationID: c.OrganizationID,
 			Name:           c.Name,
 			CreatedAt:      c.CreatedAt,
-			UpdatedAt:      c.UpdatedAt,
-		})
+		}
+
+		if !c.UpdatedAt.IsZero() {
+			resp.UpdatedAt = &c.UpdatedAt
+		}
+
+		dtos = append(dtos, resp)
 	}
 
 	httputil.JSON(w, http.StatusOK, ListCourtsResponse{Courts: dtos})
@@ -276,24 +278,8 @@ func (h *CourtHandler) UpdateCourt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	existingCourt, err := h.courtService.GetByID(r.Context(), orgID, courtID)
+	updatedCourt, err := h.courtService.UpdateName(r.Context(), orgID, courtID, req.Name)
 	if err != nil {
-		if errors.Is(err, entities.ErrNotFound) {
-			httputil.JSON(w, http.StatusNotFound, ErrorResponse{
-				Message: "court not found",
-			})
-			return
-		}
-
-		log.Error().Err(err).Str("courtID", courtID).Msg("failed to get court for update")
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	existingCourt.Name = req.Name
-	existingCourt.UpdatedAt = time.Now().UTC()
-
-	if err := h.courtService.Update(r.Context(), existingCourt); err != nil {
 		if errors.Is(err, entities.ErrNotFound) {
 			httputil.JSON(w, http.StatusNotFound, ErrorResponse{
 				Message: "court not found",
@@ -307,11 +293,14 @@ func (h *CourtHandler) UpdateCourt(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := CourtResponse{
-		ID:             existingCourt.ID,
-		OrganizationID: existingCourt.OrganizationID,
-		Name:           existingCourt.Name,
-		CreatedAt:      existingCourt.CreatedAt,
-		UpdatedAt:      existingCourt.UpdatedAt,
+		ID:             updatedCourt.ID,
+		OrganizationID: updatedCourt.OrganizationID,
+		Name:           updatedCourt.Name,
+		CreatedAt:      updatedCourt.CreatedAt,
+	}
+
+	if !updatedCourt.UpdatedAt.IsZero() {
+		resp.UpdatedAt = &updatedCourt.UpdatedAt
 	}
 
 	httputil.JSON(w, http.StatusOK, resp)
@@ -320,62 +309,4 @@ func (h *CourtHandler) UpdateCourt(w http.ResponseWriter, r *http.Request) {
 		Str("orgID", orgID).
 		Str("courtID", courtID).
 		Msg("court updated successfully")
-}
-
-// DeleteCourt godoc
-// @Summary Delete a court
-// @Description Deletes a court by its ID
-// @Tags courts
-// @Security BearerAuth
-// @Param orgID path string true "Organization ID"
-// @Param courtID path string true "Court ID"
-// @Success 204
-// @Failure 400 {object} ErrorResponse
-// @Failure 404 {object} ErrorResponse
-// @Failure 500
-// @Router /v1/organizations/{orgID}/courts/{courtID} [delete]
-func (h *CourtHandler) DeleteCourt(w http.ResponseWriter, r *http.Request) {
-	orgID := chi.URLParam(r, "orgID")
-	courtID := chi.URLParam(r, "courtID")
-
-	if orgID == "" || courtID == "" {
-		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{
-			Message: "orgID and courtID are required",
-		})
-		return
-	}
-
-	_, err := h.courtService.GetByID(r.Context(), orgID, courtID)
-	if err != nil {
-		if errors.Is(err, entities.ErrNotFound) {
-			httputil.JSON(w, http.StatusNotFound, ErrorResponse{
-				Message: "court not found",
-			})
-			return
-		}
-
-		log.Error().Err(err).Str("courtID", courtID).Msg("failed to get court for deletion")
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	if err := h.courtService.Delete(r.Context(), courtID); err != nil {
-		if errors.Is(err, entities.ErrNotFound) {
-			httputil.JSON(w, http.StatusNotFound, ErrorResponse{
-				Message: "court not found",
-			})
-			return
-		}
-
-		log.Error().Err(err).Str("courtID", courtID).Msg("failed to delete court")
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
-
-	log.Info().
-		Str("orgID", orgID).
-		Str("courtID", courtID).
-		Msg("court deleted successfully")
 }

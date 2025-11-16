@@ -7,42 +7,19 @@ definitions:
           example: "user_123"
         type: string
     type: object
-  internal_controllers_http.CourtResponse:
+  internal_controllers_http.CreateOrganizationRequest:
     properties:
-      createdAt:
-        example: "2025-11-01T10:00:00Z"
-        format: date-time
-        type: string
-      id:
-        example: court-123
+      city:
+        description: |-
+          City is the city in which the organization itself is located
+          example: Almaty
+        example: Astana
         type: string
       name:
-        example: Court 1
-        type: string
-      organizationId:
-        example: org-456
-        type: string
-      updatedAt:
-        example: "2025-11-01T10:00:00Z"
-        format: date-time
-        type: string
-    type: object
-  internal_controllers_http.CreateCourtRequest:
-    properties:
-      name:
-        example: Court 1
-        type: string
-    type: object
-  internal_controllers_http.CreateCourtResponse:
-    properties:
-      id:
-        example: court-123
-        type: string
-      name:
-        example: Court 1
-        type: string
-      organizationId:
-        example: org-456
+        description: |-
+          Name is a organization name
+          example: Padel Club #1
+        example: Padel club
         type: string
     type: object
   internal_controllers_http.ErrorResponse:
@@ -52,18 +29,19 @@ definitions:
         example: invalid JSON body
         type: string
     type: object
-  internal_controllers_http.ListCourtsResponse:
+  internal_controllers_http.ListOrganizationsResponse:
     properties:
-      courts:
+      organizations:
+        description: Organizations is the list of organizations
         items:
-          $ref: '#/definitions/internal_controllers_http.CourtResponse'
+          $ref: "#/definitions/internal_controllers_http.OrganizationResponse"
         type: array
     type: object
   internal_controllers_http.ListReservationsResponse:
     properties:
       reservations:
         items:
-          $ref: '#/definitions/internal_controllers_http.ReservationResponse'
+          $ref: "#/definitions/internal_controllers_http.ReservationResponse"
         type: array
     type: object
   internal_controllers_http.LoginRequest:
@@ -79,6 +57,39 @@ definitions:
     properties:
       token:
         example: jwt-token
+        type: string
+    type: object
+  internal_controllers_http.OrganizationResponse:
+    properties:
+      city:
+        description: |-
+          City is the city where the organization is located
+          example: Almaty
+        example: Almaty
+        type: string
+      createdAt:
+        description: |-
+          CreatedAt is the timestamp when the organization was created
+          example: 2025-11-01T10:00:00Z
+        example: "2025-11-01T10:00:00Z"
+        type: string
+      id:
+        description: |-
+          ID is the unique identifier of the created organization
+          example: org-123
+        example: org-1
+        type: string
+      name:
+        description: |-
+          Name is the organization name
+          example: Padel Club Almaty
+        example: Padel Club Almaty
+        type: string
+      updatedAt:
+        description: |-
+          UpdatedAt is the timestamp when the organization was last updated (RFC3339 format)
+          example: 2025-11-01T10:00:00Z
+        example: "2025-11-01T10:00:00Z"
         type: string
     type: object
   internal_controllers_http.RegisterUserRequest:
@@ -167,10 +178,19 @@ definitions:
         format: date-time
         type: string
     type: object
-  internal_controllers_http.UpdateCourtRequest:
+  internal_controllers_http.UpdateOrganizationRequest:
     properties:
+      city:
+        description: |-
+          City is the updated city where the organization is located
+          example: Astana
+        example: Astana
+        type: string
       name:
-        example: Updated Court Name
+        description: |-
+          Name is the updated organization name
+          example: Updated Padel Club
+        example: Updated Padel Club
         type: string
     type: object
 info:
@@ -182,356 +202,359 @@ paths:
   /v1/auth/login:
     post:
       consumes:
-      - application/json
+        - application/json
       parameters:
-      - description: Login payload
-        in: body
-        name: login
-        required: true
-        schema:
-          $ref: '#/definitions/internal_controllers_http.LoginRequest'
+        - description: Login payload
+          in: body
+          name: login
+          required: true
+          schema:
+            $ref: "#/definitions/internal_controllers_http.LoginRequest"
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_controllers_http.LoginResponse'
+            $ref: "#/definitions/internal_controllers_http.LoginResponse"
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+            $ref: "#/definitions/internal_controllers_http.ErrorResponse"
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+            $ref: "#/definitions/internal_controllers_http.ErrorResponse"
         "500":
           description: Internal Server Error
       summary: Login with nickname and password
       tags:
-      - auth
+        - auth
   /v1/auth/register:
     post:
       consumes:
-      - application/json
+        - application/json
       parameters:
-      - description: Registration payload
-        in: body
-        name: register
-        required: true
-        schema:
-          $ref: '#/definitions/internal_controllers_http.RegisterUserRequest'
+        - description: Registration payload
+          in: body
+          name: register
+          required: true
+          schema:
+            $ref: "#/definitions/internal_controllers_http.RegisterUserRequest"
       produces:
-      - application/json
+        - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/internal_controllers_http.RegisterUserResponse'
+            $ref: "#/definitions/internal_controllers_http.RegisterUserResponse"
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+            $ref: "#/definitions/internal_controllers_http.ErrorResponse"
         "500":
           description: Internal Server Error
       summary: Register a new user
       tags:
-      - auth
-  /v1/organizations/{orgID}/courts:
+        - auth
+  /v1/organizations:
     get:
-      description: Returns all courts belonging to the specified organization
+      description: Returns all organizations in a specific city
       parameters:
-      - description: Organization ID
-        in: path
-        name: orgID
-        required: true
-        type: string
+        - description: City name
+          in: query
+          name: city
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_controllers_http.ListCourtsResponse'
+            $ref: "#/definitions/internal_controllers_http.ListOrganizationsResponse"
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+            $ref: "#/definitions/internal_controllers_http.ErrorResponse"
         "500":
           description: Internal Server Error
       security:
-      - BearerAuth: []
-      summary: List all courts for an organization
+        - BearerAuth: []
+      summary: List organizations by city
       tags:
-      - courts
+        - organizations
     post:
       consumes:
-      - application/json
-      description: Creates a new court for the specified organization
+        - application/json
+      description: Create a new organization in the city
       parameters:
-      - description: Organization ID
-        in: path
-        name: orgID
-        required: true
-        type: string
-      - description: Court creation payload
-        in: body
-        name: court
-        required: true
-        schema:
-          $ref: '#/definitions/internal_controllers_http.CreateCourtRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
+        - description: Organization payload
+          in: body
+          name: organization
+          required: true
           schema:
-            $ref: '#/definitions/internal_controllers_http.CreateCourtResponse'
+            $ref: "#/definitions/internal_controllers_http.CreateOrganizationRequest"
+      responses:
+        "200":
+          description: OK
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+            $ref: "#/definitions/internal_controllers_http.ErrorResponse"
+        "409":
+          description: Conflict
+          schema:
+            $ref: "#/definitions/internal_controllers_http.ErrorResponse"
         "500":
           description: Internal Server Error
       security:
-      - BearerAuth: []
-      summary: Create a new court
+        - BearerAuth: []
+      summary: Create a new organization
       tags:
-      - courts
-  /v1/organizations/{orgID}/courts/{courtID}:
-    get:
-      description: Returns a single court by its ID
+        - organizations
+  /v1/organizations/{orgID}:
+    delete:
+      description: Deletes an organization by ID
       parameters:
-      - description: Organization ID
-        in: path
-        name: orgID
-        required: true
-        type: string
-      - description: Court ID
-        in: path
-        name: courtID
-        required: true
-        type: string
+        - description: Organization ID
+          in: path
+          name: orgID
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/internal_controllers_http.ErrorResponse"
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+        - BearerAuth: []
+      summary: Delete an organization
+      tags:
+        - organizations
+    get:
+      description: Retrieves an organization by ID
+      parameters:
+        - description: Organization ID
+          in: path
+          name: orgID
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_controllers_http.CourtResponse'
+            $ref: "#/definitions/internal_controllers_http.OrganizationResponse"
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+            $ref: "#/definitions/internal_controllers_http.ErrorResponse"
         "404":
           description: Not Found
-          schema:
-            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
         "500":
           description: Internal Server Error
       security:
-      - BearerAuth: []
-      summary: Get a court by ID
+        - BearerAuth: []
+      summary: Get an organization
       tags:
-      - courts
+        - organizations
     put:
       consumes:
-      - application/json
-      description: Updates an existing court's information
+        - application/json
+      description: Updates an existing organization
       parameters:
-      - description: Organization ID
-        in: path
-        name: orgID
-        required: true
-        type: string
-      - description: Court ID
-        in: path
-        name: courtID
-        required: true
-        type: string
-      - description: Court update payload
-        in: body
-        name: court
-        required: true
-        schema:
-          $ref: '#/definitions/internal_controllers_http.UpdateCourtRequest'
+        - description: Organization ID
+          in: path
+          name: orgID
+          required: true
+          type: string
+        - description: Organization payload
+          in: body
+          name: organization
+          required: true
+          schema:
+            $ref: "#/definitions/internal_controllers_http.UpdateOrganizationRequest"
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
-          schema:
-            $ref: '#/definitions/internal_controllers_http.CourtResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+            $ref: "#/definitions/internal_controllers_http.ErrorResponse"
         "404":
           description: Not Found
-          schema:
-            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
         "500":
           description: Internal Server Error
       security:
-      - BearerAuth: []
-      summary: Update a court
+        - BearerAuth: []
+      summary: Update an organization
       tags:
-      - courts
+        - organizations
   /v1/organizations/{orgID}/courts/{courtID}/reservations:
     get:
       description: Returns all reservations for a court within a time range
       parameters:
-      - description: Organization ID
-        in: path
-        name: orgID
-        required: true
-        type: string
-      - description: Court ID
-        in: path
-        name: courtID
-        required: true
-        type: string
-      - description: Start time in RFC3339 format
-        in: query
-        name: from
-        required: true
-        type: string
-      - description: End time in RFC3339 format
-        in: query
-        name: to
-        required: true
-        type: string
+        - description: Organization ID
+          in: path
+          name: orgID
+          required: true
+          type: string
+        - description: Court ID
+          in: path
+          name: courtID
+          required: true
+          type: string
+        - description: Start time in RFC3339 format
+          in: query
+          name: from
+          required: true
+          type: string
+        - description: End time in RFC3339 format
+          in: query
+          name: to
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_controllers_http.ListReservationsResponse'
+            $ref: "#/definitions/internal_controllers_http.ListReservationsResponse"
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+            $ref: "#/definitions/internal_controllers_http.ErrorResponse"
         "500":
           description: Internal Server Error
       security:
-      - BearerAuth: []
+        - BearerAuth: []
       summary: List reservations
       tags:
-      - reservations
+        - reservations
   /v1/organizations/{orgID}/courts/{courtID}/reservations/{reservationID}:
     delete:
       consumes:
-      - application/json
+        - application/json
       description: Cancels the reservation with the specified ID.
       parameters:
-      - description: Reservation ID
-        in: path
-        name: reservationID
-        required: true
-        type: string
-      - description: Cancellation payload
-        in: body
-        name: cancel
-        required: true
-        schema:
-          $ref: '#/definitions/internal_controllers_http.CancelReservationRequest'
+        - description: Reservation ID
+          in: path
+          name: reservationID
+          required: true
+          type: string
+        - description: Cancellation payload
+          in: body
+          name: cancel
+          required: true
+          schema:
+            $ref: "#/definitions/internal_controllers_http.CancelReservationRequest"
       responses:
         "200":
           description: OK
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+            $ref: "#/definitions/internal_controllers_http.ErrorResponse"
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+            $ref: "#/definitions/internal_controllers_http.ErrorResponse"
         "500":
           description: Internal Server Error
       security:
-      - BearerAuth: []
+        - BearerAuth: []
       summary: Cancel a reservation
       tags:
-      - reservations
+        - reservations
     get:
       description: Retrieves the reservation with the specified ID.
       parameters:
-      - description: Organization ID
-        in: path
-        name: orgID
-        required: true
-        type: string
-      - description: Court ID
-        in: path
-        name: courtID
-        required: true
-        type: string
-      - description: Reservation ID
-        in: path
-        name: reservationID
-        required: true
-        type: string
+        - description: Organization ID
+          in: path
+          name: orgID
+          required: true
+          type: string
+        - description: Court ID
+          in: path
+          name: courtID
+          required: true
+          type: string
+        - description: Reservation ID
+          in: path
+          name: reservationID
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_controllers_http.ReservationResponse'
+            $ref: "#/definitions/internal_controllers_http.ReservationResponse"
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+            $ref: "#/definitions/internal_controllers_http.ErrorResponse"
         "404":
           description: Not Found
         "500":
           description: Internal Server Error
       security:
-      - BearerAuth: []
+        - BearerAuth: []
       summary: Get a reservation
       tags:
-      - reservations
+        - reservations
   /v1/organizations/{orgID}/courts/{courtID}/reserve:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Creates a reservation for the specified organization and court.
       parameters:
-      - description: Organization ID
-        in: path
-        name: orgID
-        required: true
-        type: string
-      - description: Court ID
-        in: path
-        name: courtID
-        required: true
-        type: string
-      - description: Reservation payload
-        in: body
-        name: reservation
-        required: true
-        schema:
-          $ref: '#/definitions/internal_controllers_http.ReserveCourtRequest'
+        - description: Organization ID
+          in: path
+          name: orgID
+          required: true
+          type: string
+        - description: Court ID
+          in: path
+          name: courtID
+          required: true
+          type: string
+        - description: Reservation payload
+          in: body
+          name: reservation
+          required: true
+          schema:
+            $ref: "#/definitions/internal_controllers_http.ReserveCourtRequest"
       responses:
         "200":
           description: OK
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+            $ref: "#/definitions/internal_controllers_http.ErrorResponse"
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+            $ref: "#/definitions/internal_controllers_http.ErrorResponse"
         "500":
           description: Internal Server Error
       security:
-      - BearerAuth: []
+        - BearerAuth: []
       summary: Reserve a court
       tags:
-      - reservations
+        - reservations
 securityDefinitions:
   BearerAuth:
     in: header

@@ -105,27 +105,27 @@ const docTemplate = `{
                 }
             }
         },
-        "/v1/organizations/{orgID}/courts": {
+        "/v1/organizations": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns all courts belonging to the specified organization",
+                "description": "Returns all organizations in a specific city",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "courts"
+                    "organizations"
                 ],
-                "summary": "List all courts for an organization",
+                "summary": "List organizations by city",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Organization ID",
-                        "name": "orgID",
-                        "in": "path",
+                        "description": "City name",
+                        "name": "city",
+                        "in": "query",
                         "required": true
                     }
                 ],
@@ -133,7 +133,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_controllers_http.ListCourtsResponse"
+                            "$ref": "#/definitions/internal_controllers_http.ListOrganizationsResponse"
                         }
                     },
                     "400": {
@@ -153,44 +153,37 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Creates a new court for the specified organization",
+                "description": "Create a new organization in the city",
                 "consumes": [
                     "application/json"
                 ],
-                "produces": [
-                    "application/json"
-                ],
                 "tags": [
-                    "courts"
+                    "organizations"
                 ],
-                "summary": "Create a new court",
+                "summary": "Create a new organization",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Organization ID",
-                        "name": "orgID",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Court creation payload",
-                        "name": "court",
+                        "description": "Organization payload",
+                        "name": "organization",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_controllers_http.CreateCourtRequest"
+                            "$ref": "#/definitions/internal_controllers_http.CreateOrganizationRequest"
                         }
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/internal_controllers_http.CreateCourtResponse"
-                        }
+                    "200": {
+                        "description": "OK"
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
                         "schema": {
                             "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
                         }
@@ -201,33 +194,26 @@ const docTemplate = `{
                 }
             }
         },
-        "/v1/organizations/{orgID}/courts/{courtID}": {
+        "/v1/organizations/{orgID}": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns a single court by its ID",
+                "description": "Retrieves an organization by ID",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "courts"
+                    "organizations"
                 ],
-                "summary": "Get a court by ID",
+                "summary": "Get an organization",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "Organization ID",
                         "name": "orgID",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Court ID",
-                        "name": "courtID",
                         "in": "path",
                         "required": true
                     }
@@ -236,7 +222,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_controllers_http.CourtResponse"
+                            "$ref": "#/definitions/internal_controllers_http.OrganizationResponse"
                         }
                     },
                     "400": {
@@ -246,10 +232,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
-                        }
+                        "description": "Not Found"
                     },
                     "500": {
                         "description": "Internal Server Error"
@@ -262,7 +245,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Updates an existing court's information",
+                "description": "Updates an existing organization",
                 "consumes": [
                     "application/json"
                 ],
@@ -270,9 +253,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "courts"
+                    "organizations"
                 ],
-                "summary": "Update a court",
+                "summary": "Update an organization",
                 "parameters": [
                     {
                         "type": "string",
@@ -282,28 +265,18 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "Court ID",
-                        "name": "courtID",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Court update payload",
-                        "name": "court",
+                        "description": "Organization payload",
+                        "name": "organization",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_controllers_http.UpdateCourtRequest"
+                            "$ref": "#/definitions/internal_controllers_http.UpdateOrganizationRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/internal_controllers_http.CourtResponse"
-                        }
+                        "description": "OK"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -312,10 +285,45 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deletes an organization by ID",
+                "tags": [
+                    "organizations"
+                ],
+                "summary": "Delete an organization",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
                         }
+                    },
+                    "404": {
+                        "description": "Not Found"
                     },
                     "500": {
                         "description": "Internal Server Error"
@@ -573,56 +581,18 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_controllers_http.CourtResponse": {
+        "internal_controllers_http.CreateOrganizationRequest": {
             "type": "object",
             "properties": {
-                "createdAt": {
+                "city": {
+                    "description": "City is the city in which the organization itself is located\nexample: Almaty",
                     "type": "string",
-                    "format": "date-time",
-                    "example": "2025-11-01T10:00:00Z"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "court-123"
+                    "example": "Astana"
                 },
                 "name": {
+                    "description": "Name is a organization name\nexample: Padel Club #1",
                     "type": "string",
-                    "example": "Court 1"
-                },
-                "organizationId": {
-                    "type": "string",
-                    "example": "org-456"
-                },
-                "updatedAt": {
-                    "type": "string",
-                    "format": "date-time",
-                    "example": "2025-11-01T10:00:00Z"
-                }
-            }
-        },
-        "internal_controllers_http.CreateCourtRequest": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "example": "Court 1"
-                }
-            }
-        },
-        "internal_controllers_http.CreateCourtResponse": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string",
-                    "example": "court-123"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "Court 1"
-                },
-                "organizationId": {
-                    "type": "string",
-                    "example": "org-456"
+                    "example": "Padel club"
                 }
             }
         },
@@ -636,13 +606,14 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_controllers_http.ListCourtsResponse": {
+        "internal_controllers_http.ListOrganizationsResponse": {
             "type": "object",
             "properties": {
-                "courts": {
+                "organizations": {
+                    "description": "Organizations is the list of organizations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_controllers_http.CourtResponse"
+                        "$ref": "#/definitions/internal_controllers_http.OrganizationResponse"
                     }
                 }
             }
@@ -677,6 +648,36 @@ const docTemplate = `{
                 "token": {
                     "type": "string",
                     "example": "jwt-token"
+                }
+            }
+        },
+        "internal_controllers_http.OrganizationResponse": {
+            "type": "object",
+            "properties": {
+                "city": {
+                    "description": "City is the city where the organization is located\nexample: Almaty",
+                    "type": "string",
+                    "example": "Almaty"
+                },
+                "createdAt": {
+                    "description": "CreatedAt is the timestamp when the organization was created\nexample: 2025-11-01T10:00:00Z",
+                    "type": "string",
+                    "example": "2025-11-01T10:00:00Z"
+                },
+                "id": {
+                    "description": "ID is the unique identifier of the created organization\nexample: org-123",
+                    "type": "string",
+                    "example": "org-1"
+                },
+                "name": {
+                    "description": "Name is the organization name\nexample: Padel Club Almaty",
+                    "type": "string",
+                    "example": "Padel Club Almaty"
+                },
+                "updatedAt": {
+                    "description": "UpdatedAt is the timestamp when the organization was last updated (RFC3339 format)\nexample: 2025-11-01T10:00:00Z",
+                    "type": "string",
+                    "example": "2025-11-01T10:00:00Z"
                 }
             }
         },
@@ -788,12 +789,18 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_controllers_http.UpdateCourtRequest": {
+        "internal_controllers_http.UpdateOrganizationRequest": {
             "type": "object",
             "properties": {
-                "name": {
+                "city": {
+                    "description": "City is the updated city where the organization is located\nexample: Astana",
                     "type": "string",
-                    "example": "Updated Court Name"
+                    "example": "Astana"
+                },
+                "name": {
+                    "description": "Name is the updated organization name\nexample: Updated Padel Club",
+                    "type": "string",
+                    "example": "Updated Padel Club"
                 }
             }
         }

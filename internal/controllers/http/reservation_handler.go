@@ -53,29 +53,13 @@ func (r *ReserveCourtRequest) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("decode request: %w", err)
 	}
 
-	parse := func(s string) (time.Time, error) {
-		layouts := []string{
-			time.RFC3339,       // 2025-11-04T19:45:00Z or +05:00
-			"2006-01-02T15:04", // 2025-11-04T19:45 (no seconds, no TZ)
-		}
-		var lastErr error
-		for _, layout := range layouts {
-			if t, err := time.Parse(layout, s); err == nil {
-				return t, nil
-			} else {
-				lastErr = err
-			}
-		}
-		return time.Time{}, fmt.Errorf("invalid time format %q: %w", s, lastErr)
-	}
-
 	var err error
-	r.StartTime, err = parse(raw.StartTime)
+	r.StartTime, err = httputil.ParseTime(raw.StartTime)
 	if err != nil {
 		return fmt.Errorf("parse startTime: %w", err)
 	}
 
-	r.EndTime, err = parse(raw.EndTime)
+	r.EndTime, err = httputil.ParseTime(raw.EndTime)
 	if err != nil {
 		return fmt.Errorf("parse endTime: %w", err)
 	}
@@ -288,7 +272,7 @@ func (h *ReservationHandler) ListReservations(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	from, err := time.Parse(time.RFC3339, fromStr)
+	from, err := httputil.ParseTime(fromStr)
 	if err != nil {
 		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{
 			Message: "invalid from time format, expected RFC3339",
@@ -296,7 +280,7 @@ func (h *ReservationHandler) ListReservations(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	to, err := time.Parse(time.RFC3339, toStr)
+	to, err := httputil.ParseTime(toStr)
 	if err != nil {
 		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{
 			Message: "invalid to time format, expected RFC3339",
@@ -371,7 +355,6 @@ func (h *ReservationHandler) GetReservation(w http.ResponseWriter, r *http.Reque
 	}
 
 	rev, err := h.rsvService.GetReservation(r.Context(), courtID, reservationID)
-
 	if err != nil {
 		if errors.Is(err, entities.ErrNotFound) {
 			w.WriteHeader(http.StatusNotFound)

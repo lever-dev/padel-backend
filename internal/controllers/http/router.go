@@ -13,8 +13,9 @@ import (
 
 func NewRouter(
 	reservationHandler *ReservationHandler,
-	authHandler *AuthHandler,
+	organizationHandler *OrganizationHandler,
 	courtHandler *CourtHandler,
+	authHandler *AuthHandler,
 	authMiddleware func(http.Handler) http.Handler,
 ) http.Handler {
 	r := chi.NewRouter()
@@ -33,6 +34,12 @@ func NewRouter(
 			if authMiddleware != nil {
 				r.Use(authMiddleware)
 			}
+
+			r.Post("/organizations", organizationHandler.CreateOrganization)
+			r.Get("/organizations/{orgID}", organizationHandler.GetOrganization)
+			r.Get("/organizations", organizationHandler.GetOrganizationsByCity)
+			r.Put("/organizations/{orgID}", organizationHandler.UpdateOrganization)
+			r.Delete("/organizations/{orgID}", organizationHandler.DeleteOrganization)
 
 			r.Post("/organizations/{orgID}/courts/{courtID}/reservations", reservationHandler.ReserveCourt)
 			r.Delete(

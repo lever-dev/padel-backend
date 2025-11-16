@@ -98,7 +98,7 @@ func (s *repositorySuite) TestGetOrganizationByCity() {
 	s.seedOrganizations(ctx, []*entities.Organization{
 		{
 			ID:   "org-list-1",
-			Name: "org-1",
+			Name: "org-2",
 			City: "Almaty",
 		},
 		{

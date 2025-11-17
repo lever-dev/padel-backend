@@ -22,6 +22,30 @@ definitions:
         example: Padel club
         type: string
     type: object
+  internal_controllers_http.CreateOrganizationResponse:
+    properties:
+      city:
+        description: |-
+          City is the city in which the organization itself is located
+          example: Almaty
+        example: Astana
+        type: string
+      createdAt:
+        description: |-
+          CreatedAt is the timestamp when the organization was created
+          example: 2025-11-01T10:00:00Z
+        example: "2025-11-01T10:00:00Z"
+        type: string
+      id:
+        description: ID is a organization UUID
+        type: string
+      name:
+        description: |-
+          Name is a organization name
+          example: Padel Club #1
+        example: Padel club
+        type: string
+    type: object
   internal_controllers_http.ErrorResponse:
     properties:
       message:
@@ -296,8 +320,10 @@ paths:
           schema:
             $ref: "#/definitions/internal_controllers_http.CreateOrganizationRequest"
       responses:
-        "200":
-          description: OK
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_controllers_http.CreateOrganizationResponse'
         "400":
           description: Bad Request
           schema:
@@ -314,6 +340,7 @@ paths:
       tags:
         - organizations
   /v1/organizations/{orgID}:
+<<<<<<< HEAD
     delete:
       description: Deletes an organization by ID
       parameters:
@@ -338,6 +365,8 @@ paths:
       summary: Delete an organization
       tags:
         - organizations
+=======
+>>>>>>> df0595c (Removed unnecessary logs. Added a response object when creating an organization.)
     get:
       description: Retrieves an organization by ID
       parameters:

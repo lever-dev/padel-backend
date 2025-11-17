@@ -173,8 +173,11 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK"
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.CreateOrganizationResponse"
+                        }
                     },
                     "400": {
                         "description": "Bad Request",
@@ -272,44 +275,6 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/internal_controllers_http.UpdateOrganizationRequest"
                         }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found"
-                    },
-                    "500": {
-                        "description": "Internal Server Error"
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Deletes an organization by ID",
-                "tags": [
-                    "organizations"
-                ],
-                "summary": "Delete an organization",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Organization ID",
-                        "name": "orgID",
-                        "in": "path",
-                        "required": true
                     }
                 ],
                 "responses": {
@@ -588,6 +553,30 @@ const docTemplate = `{
                     "description": "City is the city in which the organization itself is located\nexample: Almaty",
                     "type": "string",
                     "example": "Astana"
+                },
+                "name": {
+                    "description": "Name is a organization name\nexample: Padel Club #1",
+                    "type": "string",
+                    "example": "Padel club"
+                }
+            }
+        },
+        "internal_controllers_http.CreateOrganizationResponse": {
+            "type": "object",
+            "properties": {
+                "city": {
+                    "description": "City is the city in which the organization itself is located\nexample: Almaty",
+                    "type": "string",
+                    "example": "Astana"
+                },
+                "createdAt": {
+                    "description": "CreatedAt is the timestamp when the organization was created\nexample: 2025-11-01T10:00:00Z",
+                    "type": "string",
+                    "example": "2025-11-01T10:00:00Z"
+                },
+                "id": {
+                    "description": "ID is a organization UUID",
+                    "type": "string"
                 },
                 "name": {
                     "description": "Name is a organization name\nexample: Padel Club #1",

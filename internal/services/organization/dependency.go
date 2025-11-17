@@ -13,5 +13,4 @@ type OrganizationsRepository interface {
 	GetByID(ctx context.Context, organizationID string) (*entities.Organization, error)
 	GetOrganizationsByCity(ctx context.Context, city string) ([]entities.Organization, error)
 	Update(ctx context.Context, org *entities.Organization) error
-	Delete(ctx context.Context, id string) error
 }

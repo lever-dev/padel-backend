@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/lever-dev/padel-backend/internal/entities"
 	"github.com/lever-dev/padel-backend/pkg/httputil"
 	"github.com/rs/zerolog/log"
@@ -19,7 +19,6 @@ type OrganizationService interface {
 	GetOrganizationsByCity(ctx context.Context, city string) ([]entities.Organization, error)
 	GetOrganization(ctx context.Context, organizationID string) (*entities.Organization, error)
 	UpdateOrganization(ctx context.Context, organization *entities.Organization) error
-	DeleteOrganization(ctx context.Context, organizationID string) error
 }
 
 type OrganizationHandler struct {
@@ -42,7 +41,22 @@ type CreateOrganizationRequest struct {
 	City string `json:"city" example:"Astana"`
 }
 
-type CreateOrganizationResponse struct{}
+type CreateOrganizationResponse struct {
+	// ID is a organization UUID
+	ID string `json:"id"`
+
+	// Name is a organization name
+	// example: Padel Club #1
+	Name string `json:"name" example:"Padel club"`
+
+	// City is the city in which the organization itself is located
+	// example: Almaty
+	City string `json:"city" example:"Astana"`
+
+	// CreatedAt is the timestamp when the organization was created
+	// example: 2025-11-01T10:00:00Z
+	CreatedAt time.Time `json:"createdAt" example:"2025-11-01T10:00:00Z"`
+}
 
 // CreateOrganization godoc
 // @Summary Create a new organization
@@ -51,7 +65,7 @@ type CreateOrganizationResponse struct{}
 // @Security BearerAuth
 // @Accept json
 // @Param organization body CreateOrganizationRequest true "Organization payload"
-// @Success 200
+// @Success 201 {object} CreateOrganizationResponse
 // @Failure 400 {object} ErrorResponse
 // @Failure 409 {object} ErrorResponse
 // @Failure 500
@@ -75,20 +89,29 @@ func (o *OrganizationHandler) CreateOrganization(w http.ResponseWriter, r *http.
 	org := entities.NewOrganization(req.Name, req.City)
 
 	if err := o.orgService.CreateOrganization(r.Context(), org); err != nil {
-		if strings.Contains(err.Error(), "duplicate key") ||
-			strings.Contains(err.Error(), "unique constraint") {
-			httputil.JSON(w, http.StatusConflict, ErrorResponse{
-				Message: "organization with this name already exists in this city",
-			})
+		var pgErr *pgconn.PgError
 
-			log.Error().Err(err).Str("name", org.Name).Str("city", org.City).Msg("organization already exists")
-			return
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "23505" {
+				httputil.JSON(w, http.StatusConflict, ErrorResponse{
+					Message: "organization with this name already exists in this city",
+				})
+				log.Error().Err(err).Str("name", org.Name).Str("city", org.City).Msg("organization already exists")
+				return
+			}
 		}
 
 		log.Error().Err(err).Msg("failed to create organization")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	httputil.JSON(w, http.StatusCreated, CreateOrganizationResponse{
+		ID:        org.ID,
+		Name:      org.Name,
+		City:      org.City,
+		CreatedAt: org.CreatedAt,
+	})
 
 	log.Info().
 		Str("organization id", org.ID).
@@ -140,13 +163,11 @@ func (h *OrganizationHandler) GetOrganization(w http.ResponseWriter, r *http.Req
 
 	org, err := h.orgService.GetOrganization(r.Context(), orgID)
 	if err != nil {
+		log.Error().Err(err).Str("orgID", orgID).Msg("failed to get organization")
 		if errors.Is(err, entities.ErrNotFound) {
 			w.WriteHeader(http.StatusNotFound)
-
-			log.Info().Str("orgID", orgID).Msg("organization not found") // Log ERR?
 			return
 		}
-		log.Error().Err(err).Str("orgID", orgID).Msg("failed to get organization")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -260,48 +281,14 @@ func (h *OrganizationHandler) UpdateOrganization(w http.ResponseWriter, r *http.
 	}
 
 	if err := h.orgService.UpdateOrganization(r.Context(), org); err != nil {
+		log.Error().Err(err).Str("orgID", orgID).Msg("failed to update organization")
 		if errors.Is(err, entities.ErrNotFound) {
 			w.WriteHeader(http.StatusNotFound)
-			log.Info().Str("orgID", orgID).Msg("organization not found for update") // or ERR log
 			return
 		}
-		log.Error().Err(err).Str("orgID", orgID).Msg("failed to update organization")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	log.Info().Str("organization_id", org.ID).Msg("organization updated successfully")
-}
-
-// DeleteOrganization godoc
-// @Summary Delete an organization
-// @Description Deletes an organization by ID
-// @Tags organizations
-// @Security BearerAuth
-// @Param orgID path string true "Organization ID"
-// @Success 200
-// @Failure 400 {object} ErrorResponse
-// @Failure 404
-// @Failure 500
-// @Router /v1/organizations/{orgID} [delete]
-func (h *OrganizationHandler) DeleteOrganization(w http.ResponseWriter, r *http.Request) {
-	orgID := chi.URLParam(r, "orgID")
-	if orgID == "" {
-		httputil.JSON(w, http.StatusBadRequest, ErrorResponse{Message: "orgID is required"})
-		return
-	}
-
-	if err := h.orgService.DeleteOrganization(r.Context(), orgID); err != nil {
-		if errors.Is(err, entities.ErrNotFound) {
-			w.WriteHeader(http.StatusNotFound)
-			log.Info().Str("orgID", orgID).Msg("organization not found for deletion") // or err Log
-			return
-		}
-
-		w.WriteHeader(http.StatusInternalServerError)
-		log.Error().Err(err).Str("orgID", orgID).Msg("failed to delete organization")
-		return
-	}
-
-	log.Info().Str("organization_id", orgID).Msg("organization deleted successfully")
 }

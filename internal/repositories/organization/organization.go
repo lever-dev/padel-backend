@@ -46,7 +46,6 @@ func (r *Repository) Create(ctx context.Context, organization *entities.Organiza
 
 	if organization.CreatedAt.IsZero() {
 		organization.CreatedAt = time.Now().UTC()
-		organization.UpdatedAt = time.Now().UTC()
 	}
 
 	d := newDTO(organization)
@@ -149,8 +148,6 @@ func (r *Repository) Update(ctx context.Context, org *entities.Organization) err
 	if r.pool == nil {
 		return fmt.Errorf("not connected to pool")
 	}
-
-	org.UpdatedAt = time.Now().UTC()
 
 	tag, err := r.pool.Exec(
 		ctx,

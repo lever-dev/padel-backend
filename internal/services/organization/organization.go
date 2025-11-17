@@ -46,10 +46,3 @@ func (s *Service) UpdateOrganization(ctx context.Context, org *entities.Organiza
 	}
 	return nil
 }
-
-func (s *Service) DeleteOrganization(ctx context.Context, id string) error {
-	if err := s.organizationsRepo.Delete(ctx, id); err != nil {
-		return fmt.Errorf("delete organization: %w", err)
-	}
-	return nil
-}

@@ -39,7 +39,6 @@ func NewRouter(
 			r.Get("/organizations/{orgID}", organizationHandler.GetOrganization)
 			r.Get("/organizations", organizationHandler.GetOrganizationsByCity)
 			r.Put("/organizations/{orgID}", organizationHandler.UpdateOrganization)
-			r.Delete("/organizations/{orgID}", organizationHandler.DeleteOrganization)
 
 			r.Post("/organizations/{orgID}/courts/{courtID}/reservations", reservationHandler.ReserveCourt)
 			r.Delete(

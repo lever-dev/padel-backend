@@ -177,49 +177,39 @@ const updateCourtQuery = `
 	WHERE id = $4
 `
 
-func (r *Repository) UpdateName(
-	ctx context.Context,
-	organizationID string,
-	courtID string,
-	name string,
-) (*entities.Court, error) {
+func (r *Repository) UpdateName(ctx context.Context, court *entities.Court) error {
 	if r.pool == nil {
-		return nil, fmt.Errorf("not connected to pool")
+		return fmt.Errorf("not connected to pool")
 	}
 
 	row := r.pool.QueryRow(
 		ctx,
 		updateCourtNameQuery,
-		name,
-		organizationID,
-		courtID,
+		court.Name,
+		court.OrganizationID,
+		court.ID,
 	)
 
-	crt, err := scan(row)
-	if err != nil {
+	if err := row.Scan(&court.UpdatedAt); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, entities.ErrNotFound
+			return entities.ErrNotFound
 		}
-
-		return nil, fmt.Errorf("scan court: %w", err)
+		return fmt.Errorf("scan updated_at: %w", err)
 	}
 
-	return &crt, nil
+	court.UpdatedAt = court.UpdatedAt.UTC()
+
+	return nil
 }
 
 const updateCourtNameQuery = `
-	UPDATE courts
-	SET
-		name = $1,
-		updated_at = NOW()
-	WHERE id = $3
-	  AND organization_id = $2
-	RETURNING
-		id,
-		organization_id,
-		name,
-		created_at,
-		updated_at
+    UPDATE courts
+    SET
+        name = $1,
+        updated_at = NOW()
+    WHERE id = $3
+      AND organization_id = $2
+    RETURNING updated_at
 `
 
 type rowScanner interface {

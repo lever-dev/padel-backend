@@ -44,10 +44,10 @@ type CreateCourtResponse struct {
 
 // swagger:model CourtResponse
 type CourtResponse struct {
-	ID             string     `json:"id"             example:"court-123"`
-	OrganizationID string     `json:"organizationId" example:"org-456"`
-	Name           string     `json:"name"           example:"Court 1"`
-	CreatedAt      time.Time  `json:"createdAt"      example:"2025-11-01T10:00:00Z" format:"date-time"`
+	ID             string     `json:"id"                  example:"court-123"`
+	OrganizationID string     `json:"organizationId"      example:"org-456"`
+	Name           string     `json:"name"                example:"Court 1"`
+	CreatedAt      time.Time  `json:"createdAt"           example:"2025-11-01T10:00:00Z" format:"date-time"`
 	UpdatedAt      *time.Time `json:"updatedAt,omitempty" example:"2025-11-01T10:00:00Z" format:"date-time"`
 }
 

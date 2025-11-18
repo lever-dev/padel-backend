@@ -94,16 +94,15 @@ func (mr *MockCourtsRepositoryMockRecorder) Update(ctx, court interface{}) *gomo
 }
 
 // UpdateName mocks base method.
-func (m *MockCourtsRepository) UpdateName(ctx context.Context, organizationID, courtID, name string) (*entities.Court, error) {
+func (m *MockCourtsRepository) UpdateName(ctx context.Context, court *entities.Court) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateName", ctx, organizationID, courtID, name)
-	ret0, _ := ret[0].(*entities.Court)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "UpdateName", ctx, court)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // UpdateName indicates an expected call of UpdateName.
-func (mr *MockCourtsRepositoryMockRecorder) UpdateName(ctx, organizationID, courtID, name interface{}) *gomock.Call {
+func (mr *MockCourtsRepositoryMockRecorder) UpdateName(ctx, court interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateName", reflect.TypeOf((*MockCourtsRepository)(nil).UpdateName), ctx, organizationID, courtID, name)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateName", reflect.TypeOf((*MockCourtsRepository)(nil).UpdateName), ctx, court)
 }

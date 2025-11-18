@@ -121,7 +121,6 @@ func (s *repositorySuite) TestUpdateCourt() {
 	s.Equal("Updated Name", cDb.Name)
 	s.False(cDb.UpdatedAt.IsZero(), "UpdatedAt must be set")
 }
-
 func (s *repositorySuite) TestUpdateName() {
 	ctx := context.Background()
 
@@ -133,15 +132,19 @@ func (s *repositorySuite) TestUpdateName() {
 
 	s.seedCourts(ctx, []*entities.Court{c})
 
-	updated, err := s.repo.UpdateName(ctx, "org-7", c.ID, "After")
+	c.Name = "After"
+
+	err := s.repo.UpdateName(ctx, c)
 	s.Require().NoError(err)
 
-	s.Equal("After", updated.Name)
-	s.Equal("org-7", updated.OrganizationID)
-	s.False(updated.UpdatedAt.IsZero(), "UpdatedAt must be updated")
+	s.Equal("court-updatename-1", c.ID)
+	s.Equal("org-7", c.OrganizationID)
+	s.Equal("After", c.Name)
+	s.False(c.UpdatedAt.IsZero(), "UpdatedAt must be set on update")
 
-	// Verify change persisted
 	db, err := s.repo.GetByID(ctx, c.ID)
 	s.Require().NoError(err)
 	s.Equal("After", db.Name)
+	s.Equal("org-7", db.OrganizationID)
+	s.False(db.UpdatedAt.IsZero(), "UpdatedAt in DB must be set")
 }

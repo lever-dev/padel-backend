@@ -363,7 +363,6 @@ func (s *ServiceSuite) TestUpdate() {
 		})
 	}
 }
-
 func (s *ServiceSuite) TestUpdateName() {
 	ctx := context.Background()
 	orgID := "org-1"
@@ -385,15 +384,22 @@ func (s *ServiceSuite) TestUpdateName() {
 			courtID: courtID,
 			newName: newName,
 			setupMocks: func(mockRepo *mocks.MockCourtsRepository) {
-				mockRepo.EXPECT().
-					UpdateName(ctx, orgID, courtID, newName).
-					Return(&entities.Court{
-						ID:             courtID,
-						OrganizationID: orgID,
-						Name:           newName,
-						CreatedAt:      time.Now(),
-						UpdatedAt:      time.Now(),
-					}, nil)
+				existing := &entities.Court{
+					ID:             courtID,
+					OrganizationID: orgID,
+					Name:           "Old Name",
+					CreatedAt:      time.Now(),
+				}
+
+				gomock.InOrder(
+					mockRepo.EXPECT().
+						GetByID(ctx, courtID).
+						Return(existing, nil),
+
+					mockRepo.EXPECT().
+						UpdateName(ctx, gomock.AssignableToTypeOf(&entities.Court{})).
+						Return(nil),
+				)
 			},
 			wantCourt: &entities.Court{
 				ID:             courtID,
@@ -403,27 +409,40 @@ func (s *ServiceSuite) TestUpdateName() {
 			wantErr: nil,
 		},
 		{
-			name:    "court not found",
+			name:    "court not found (GetByID)",
 			orgID:   orgID,
-			courtID: courtID,
+			courtID: "non-existent",
 			newName: newName,
 			setupMocks: func(mockRepo *mocks.MockCourtsRepository) {
 				mockRepo.EXPECT().
-					UpdateName(ctx, orgID, courtID, newName).
+					GetByID(ctx, "non-existent").
 					Return(nil, entities.ErrNotFound)
 			},
 			wantCourt: nil,
 			wantErr:   entities.ErrNotFound,
 		},
 		{
-			name:    "repository error",
+			name:    "repository error on UpdateName",
 			orgID:   orgID,
 			courtID: courtID,
 			newName: newName,
 			setupMocks: func(mockRepo *mocks.MockCourtsRepository) {
-				mockRepo.EXPECT().
-					UpdateName(ctx, orgID, courtID, newName).
-					Return(nil, fmt.Errorf("db error"))
+				existing := &entities.Court{
+					ID:             courtID,
+					OrganizationID: orgID,
+					Name:           "Old Name",
+					CreatedAt:      time.Now(),
+				}
+
+				gomock.InOrder(
+					mockRepo.EXPECT().
+						GetByID(ctx, courtID).
+						Return(existing, nil),
+
+					mockRepo.EXPECT().
+						UpdateName(ctx, gomock.AssignableToTypeOf(&entities.Court{})).
+						Return(fmt.Errorf("db error")),
+				)
 			},
 			wantCourt: nil,
 			wantErr:   fmt.Errorf("db error"),
@@ -441,11 +460,17 @@ func (s *ServiceSuite) TestUpdateName() {
 
 			if tt.wantErr != nil {
 				s.Error(err)
+
 				if errors.Is(tt.wantErr, entities.ErrNotFound) {
 					s.ErrorIs(err, entities.ErrNotFound)
 				} else {
-					s.Contains(err.Error(), "update court name")
+					if tt.name == "repository error on UpdateName" {
+						s.Contains(err.Error(), "update court name")
+					} else {
+						s.Contains(err.Error(), "get court by id")
+					}
 				}
+
 				s.Nil(result)
 			} else {
 				s.NoError(err)

@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS courts (
     organization_id TEXT NOT NULL,
     name TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    updated_at TIMESTAMPTZ
 );
 
 CREATE INDEX idx_organization_id ON courts (organization_id);

@@ -89,7 +89,7 @@ type ErrorResponse struct {
 // @Failure 400 {object} ErrorResponse
 // @Failure 409 {object} ErrorResponse
 // @Failure 500
-// @Router /v1/organizations/{orgID}/courts/{courtID}/reserve [post]
+// @Router /v1/reservations/organizations/{orgID}/courts/{courtID} [post]
 func (h *ReservationHandler) ReserveCourt(w http.ResponseWriter, r *http.Request) {
 	orgID := chi.URLParam(r, "orgID")
 	courtID := chi.URLParam(r, "courtID")
@@ -169,6 +169,8 @@ type CancelReservationRequest struct {
 // @Description Cancels the reservation with the specified ID.
 // @Tags reservations
 // @Security BearerAuth
+// @Param orgID path string true "Organization ID"
+// @Param courtID path string true "Court ID"
 // @Param reservationID path string true "Reservation ID"
 // @Accept json
 // @Param cancel body CancelReservationRequest true "Cancellation payload"
@@ -176,7 +178,7 @@ type CancelReservationRequest struct {
 // @Failure 400 {object} ErrorResponse
 // @Failure 404 {object} ErrorResponse
 // @Failure 500
-// @Router /v1/organizations/{orgID}/courts/{courtID}/reservations/{reservationID} [delete]
+// @Router /v1/reservations/{reservationID}/organizations/{orgID}/courts/{courtID} [delete]
 func (h *ReservationHandler) CancelReservation(w http.ResponseWriter, r *http.Request) {
 	orgID := chi.URLParam(r, "orgID")
 	courtID := chi.URLParam(r, "courtID")
@@ -250,7 +252,7 @@ type ListReservationsResponse struct {
 // @Success 200 {object} ListReservationsResponse
 // @Failure 400 {object} ErrorResponse
 // @Failure 500
-// @Router /v1/organizations/{orgID}/courts/{courtID}/reservations [get]
+// @Router /v1/reservations/organizations/{orgID}/courts/{courtID} [get]
 func (h *ReservationHandler) ListReservations(w http.ResponseWriter, r *http.Request) {
 	orgID := chi.URLParam(r, "orgID")
 	courtID := chi.URLParam(r, "courtID")
@@ -341,7 +343,7 @@ func (h *ReservationHandler) ListReservations(w http.ResponseWriter, r *http.Req
 // @Failure 400 {object} ErrorResponse
 // @Failure 404
 // @Failure 500
-// @Router /v1/organizations/{orgID}/courts/{courtID}/reservations/{reservationID} [get]
+// @Router /v1/reservations/{reservationID}/organizations/{orgID}/courts/{courtID} [get]
 func (h *ReservationHandler) GetReservation(w http.ResponseWriter, r *http.Request) {
 	orgID := chi.URLParam(r, "orgID")
 	courtID := chi.URLParam(r, "courtID")

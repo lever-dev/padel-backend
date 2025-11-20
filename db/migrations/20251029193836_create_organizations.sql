@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS organizations (
     name TEXT NOT NULL,
     city TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    updated_at TIMESTAMPTZ
 );
 
 CREATE INDEX idx_organizations_city ON organizations (city);

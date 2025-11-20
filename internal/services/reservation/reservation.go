@@ -42,8 +42,10 @@ func (s *Service) ReserveCourt(ctx context.Context, courtID string, reservation 
 		return fmt.Errorf("failed to check overlapping reservations: %w", err)
 	}
 
-	if len(overlapping) > 0 {
-		return entities.ErrCourtAlreadyReserved
+	for _, val := range overlapping {
+		if val.Status == entities.ReservedReservationStatus || val.Status == entities.PendingReservationStatus {
+			return entities.ErrCourtAlreadyReserved
+		}
 	}
 
 	if err := s.reservationsRepo.Create(ctx, reservation); err != nil {

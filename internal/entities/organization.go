@@ -20,6 +20,5 @@ func NewOrganization(name, city string) *Organization {
 		Name:      name,
 		City:      city,
 		CreatedAt: time.Now().UTC(),
-		UpdatedAt: time.Now().UTC(),
 	}
 }

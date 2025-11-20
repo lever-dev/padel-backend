@@ -2,6 +2,7 @@ package organization
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -57,7 +58,6 @@ func (r *Repository) Create(ctx context.Context, organization *entities.Organiza
 		d.Name,
 		d.City,
 		d.CreatedAt,
-		d.UpdatedAt,
 	)
 	if err != nil {
 		return fmt.Errorf("exec: %w", err)
@@ -71,9 +71,8 @@ const createOrganizationQuery = `
 		id,
 		name,
 		city,
-		created_at,
-		updated_at
-	) VALUES ($1, $2, $3, $4, $5)
+		created_at
+	) VALUES ($1, $2, $3, $4)
 `
 
 func (r *Repository) GetByID(ctx context.Context, organizationID string) (*entities.Organization, error) {
@@ -205,20 +204,23 @@ type rowScanner interface {
 
 func scan(scanner rowScanner) (entities.Organization, error) {
 	var d dto
+	var sqlUpdateAt sql.NullTime
 
 	err := scanner.Scan(
 		&d.ID,
 		&d.Name,
 		&d.City,
 		&d.CreatedAt,
-		&d.UpdatedAt,
+		&sqlUpdateAt,
 	)
 	if err != nil {
 		return entities.Organization{}, err
 	}
 
 	d.CreatedAt = d.CreatedAt.UTC()
-	d.UpdatedAt = d.UpdatedAt.UTC()
 
+	if sqlUpdateAt.Valid {
+		d.UpdatedAt = sqlUpdateAt.Time.UTC()
+	}
 	return d.toEntity(), nil
 }

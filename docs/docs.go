@@ -514,7 +514,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/v1/reservations/organizations/{orgID}/courts/{courtID}": {
+        "/v1/organizations/{orgID}/courts/{courtID}/reservations": {
             "get": {
                 "security": [
                     {
@@ -638,7 +638,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/v1/reservations/{reservationID}/organizations/{orgID}/courts/{courtID}": {
+        "/v1/organizations/{orgID}/courts/{courtID}/reservations/{reservationID}": {
             "get": {
                 "security": [
                     {
@@ -712,6 +712,20 @@ const docTemplate = `{
                 ],
                 "summary": "Cancel a reservation",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Court ID",
+                        "name": "courtID",
+                        "in": "path",
+                        "required": true
+                    },
                     {
                         "type": "string",
                         "description": "Reservation ID",

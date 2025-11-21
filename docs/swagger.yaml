@@ -593,80 +593,7 @@ paths:
       summary: Update a court
       tags:
       - courts
-  /v1/reservations/{reservationID}/organizations/{orgID}/courts/{courtID}:
-    delete:
-      consumes:
-      - application/json
-      description: Cancels the reservation with the specified ID.
-      parameters:
-      - description: Reservation ID
-        in: path
-        name: reservationID
-        required: true
-        type: string
-      - description: Cancellation payload
-        in: body
-        name: cancel
-        required: true
-        schema:
-          $ref: '#/definitions/internal_controllers_http.CancelReservationRequest'
-      responses:
-        "200":
-          description: OK
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
-        "500":
-          description: Internal Server Error
-      security:
-      - BearerAuth: []
-      summary: Cancel a reservation
-      tags:
-      - reservations
-    get:
-      description: Retrieves the reservation with the specified ID.
-      parameters:
-      - description: Organization ID
-        in: path
-        name: orgID
-        required: true
-        type: string
-      - description: Court ID
-        in: path
-        name: courtID
-        required: true
-        type: string
-      - description: Reservation ID
-        in: path
-        name: reservationID
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/internal_controllers_http.ReservationResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
-        "404":
-          description: Not Found
-        "500":
-          description: Internal Server Error
-      security:
-      - BearerAuth: []
-      summary: Get a reservation
-      tags:
-      - reservations
-  /v1/reservations/organizations/{orgID}/courts/{courtID}:
+  /v1/organizations/{orgID}/courts/{courtID}/reservations:
     get:
       description: Returns all reservations for a court within a time range
       parameters:
@@ -745,6 +672,89 @@ paths:
       security:
       - BearerAuth: []
       summary: Reserve a court
+      tags:
+      - reservations
+  /v1/organizations/{orgID}/courts/{courtID}/reservations/{reservationID}:
+    delete:
+      consumes:
+      - application/json
+      description: Cancels the reservation with the specified ID.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Court ID
+        in: path
+        name: courtID
+        required: true
+        type: string
+      - description: Reservation ID
+        in: path
+        name: reservationID
+        required: true
+        type: string
+      - description: Cancellation payload
+        in: body
+        name: cancel
+        required: true
+        schema:
+          $ref: '#/definitions/internal_controllers_http.CancelReservationRequest'
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: Cancel a reservation
+      tags:
+      - reservations
+    get:
+      description: Retrieves the reservation with the specified ID.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Court ID
+        in: path
+        name: courtID
+        required: true
+        type: string
+      - description: Reservation ID
+        in: path
+        name: reservationID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_controllers_http.ReservationResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_controllers_http.ErrorResponse'
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: Get a reservation
       tags:
       - reservations
 securityDefinitions:

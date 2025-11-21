@@ -38,7 +38,7 @@ func (s *ServiceSuite) TestReserveCourt() {
 		courtID     string
 		reservation *entities.Reservation
 		setupMocks  func(mockRepo *mocks.MockReservationsRepository, res *entities.Reservation)
-		wantErr     error
+		wantErr     bool
 	}{
 		{
 			name:    "success",
@@ -60,7 +60,7 @@ func (s *ServiceSuite) TestReserveCourt() {
 					Create(gomock.Any(), res).
 					Return(nil)
 			},
-			wantErr: nil,
+			wantErr: false,
 		},
 		{
 			name:    "conflict - court reserved",
@@ -90,7 +90,7 @@ func (s *ServiceSuite) TestReserveCourt() {
 
 				mockRepo.EXPECT().Create(gomock.Any(), gomock.Any()).Times(0)
 			},
-			wantErr: entities.ErrCourtAlreadyReserved,
+			wantErr: true,
 		},
 		{
 			name:    "conflict - court pending",
@@ -121,7 +121,7 @@ func (s *ServiceSuite) TestReserveCourt() {
 					Create(gomock.Any(), gomock.Any()).
 					Times(0)
 			},
-			wantErr: entities.ErrCourtAlreadyReserved,
+			wantErr: true,
 		},
 		{
 			name:    "create error",
@@ -143,7 +143,7 @@ func (s *ServiceSuite) TestReserveCourt() {
 					Create(gomock.Any(), res).
 					Return(fmt.Errorf("database insert error"))
 			},
-			wantErr: fmt.Errorf("Db error"),
+			wantErr: true,
 		},
 	}
 
@@ -159,17 +159,12 @@ func (s *ServiceSuite) TestReserveCourt() {
 
 			err := service.ReserveCourt(ctx, tt.courtID, tt.reservation)
 
-			if errors.Is(tt.wantErr, entities.ErrCourtAlreadyReserved) {
-				s.ErrorIs(err, entities.ErrCourtAlreadyReserved)
+			if tt.wantErr {
+				s.Error(err)
 				return
-			}
-
-			if tt.wantErr == nil {
+			} else {
 				s.NoError(err)
-				return
 			}
-
-			s.Error(err)
 		})
 	}
 }

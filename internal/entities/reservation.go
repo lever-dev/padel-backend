@@ -37,3 +37,7 @@ func NewReservation(courtID string, from, to time.Time, reservedBy string) *Rese
 		CreatedAt:    time.Now(),
 	}
 }
+
+func (r Reservation) IsReserved() bool {
+	return r.Status == ReservedReservationStatus || r.Status == PendingReservationStatus
+}

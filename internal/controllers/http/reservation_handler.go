@@ -89,7 +89,7 @@ type ErrorResponse struct {
 // @Failure 400 {object} ErrorResponse
 // @Failure 409 {object} ErrorResponse
 // @Failure 500
-// @Router /v1/reservations/organizations/{orgID}/courts/{courtID} [post]
+// @Router /v1/organizations/{orgID}/courts/{courtID}/reservations [post]
 func (h *ReservationHandler) ReserveCourt(w http.ResponseWriter, r *http.Request) {
 	orgID := chi.URLParam(r, "orgID")
 	courtID := chi.URLParam(r, "courtID")
@@ -178,7 +178,7 @@ type CancelReservationRequest struct {
 // @Failure 400 {object} ErrorResponse
 // @Failure 404 {object} ErrorResponse
 // @Failure 500
-// @Router /v1/reservations/{reservationID}/organizations/{orgID}/courts/{courtID} [delete]
+// @Router /v1/organizations/{orgID}/courts/{courtID}/reservations/{reservationID} [delete]
 func (h *ReservationHandler) CancelReservation(w http.ResponseWriter, r *http.Request) {
 	orgID := chi.URLParam(r, "orgID")
 	courtID := chi.URLParam(r, "courtID")
@@ -252,7 +252,7 @@ type ListReservationsResponse struct {
 // @Success 200 {object} ListReservationsResponse
 // @Failure 400 {object} ErrorResponse
 // @Failure 500
-// @Router /v1/reservations/organizations/{orgID}/courts/{courtID} [get]
+// @Router /v1/organizations/{orgID}/courts/{courtID}/reservations [get]
 func (h *ReservationHandler) ListReservations(w http.ResponseWriter, r *http.Request) {
 	orgID := chi.URLParam(r, "orgID")
 	courtID := chi.URLParam(r, "courtID")
@@ -343,7 +343,7 @@ func (h *ReservationHandler) ListReservations(w http.ResponseWriter, r *http.Req
 // @Failure 400 {object} ErrorResponse
 // @Failure 404
 // @Failure 500
-// @Router /v1/reservations/{reservationID}/organizations/{orgID}/courts/{courtID} [get]
+// @Router /v1/organizations/{orgID}/courts/{courtID}/reservations/{reservationID} [get]
 func (h *ReservationHandler) GetReservation(w http.ResponseWriter, r *http.Request) {
 	orgID := chi.URLParam(r, "orgID")
 	courtID := chi.URLParam(r, "courtID")

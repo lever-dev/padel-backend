@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/lever-dev/padel-backend/internal/entities"
 )
@@ -60,6 +61,13 @@ func (r *Repository) Create(ctx context.Context, organization *entities.Organiza
 		d.CreatedAt,
 	)
 	if err != nil {
+		var pgErr *pgconn.PgError
+
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "23505" {
+				return entities.ErrOrganizationAlreadyExist
+			}
+		}
 		return fmt.Errorf("exec: %w", err)
 	}
 

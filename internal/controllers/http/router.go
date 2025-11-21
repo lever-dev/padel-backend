@@ -40,14 +40,14 @@ func NewRouter(
 			r.Get("/organizations", organizationHandler.GetOrganizationsByCity)
 			r.Put("/organizations/{orgID}", organizationHandler.UpdateOrganization)
 
-			r.Post("/reservations/organizations/{orgID}/courts/{courtID}", reservationHandler.ReserveCourt)
+			r.Post("/organizations/{orgID}/courts/{courtID}/reservations", reservationHandler.ReserveCourt)
 			r.Delete(
-				"/reservations/{reservationID}/organizations/{orgID}/courts/{courtID}",
+				"/organizations/{orgID}/courts/{courtID}/reservations/{reservationID}",
 				reservationHandler.CancelReservation,
 			)
-			r.Get("/reservations/organizations/{orgID}/courts/{courtID}", reservationHandler.ListReservations)
+			r.Get("/organizations/{orgID}/courts/{courtID}/reservations", reservationHandler.ListReservations)
 			r.Get(
-				"/reservations/{reservationID}/organizations/{orgID}/courts/{courtID}",
+				"/organizations/{orgID}/courts/{courtID}/reservations/{reservationID}",
 				reservationHandler.GetReservation,
 			)
 

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/lever-dev/padel-backend/internal/entities"
 	"github.com/lever-dev/padel-backend/pkg/httputil"
 	"github.com/rs/zerolog/log"
@@ -89,16 +88,12 @@ func (o *OrganizationHandler) CreateOrganization(w http.ResponseWriter, r *http.
 	org := entities.NewOrganization(req.Name, req.City)
 
 	if err := o.orgService.CreateOrganization(r.Context(), org); err != nil {
-		var pgErr *pgconn.PgError
-
-		if errors.As(err, &pgErr) {
-			if pgErr.Code == "23505" {
-				httputil.JSON(w, http.StatusConflict, ErrorResponse{
-					Message: "organization with this name already exists in this city",
-				})
-				log.Error().Err(err).Str("name", org.Name).Str("city", org.City).Msg("organization already exists")
-				return
-			}
+		if errors.Is(err, entities.ErrOrganizationAlreadyExist) {
+			httputil.JSON(w, http.StatusConflict, ErrorResponse{
+				Message: "organization with this name already exists in this city",
+			})
+			log.Error().Err(err).Str("name", org.Name).Str("city", org.City).Msg("organization already exists")
+			return
 		}
 
 		log.Error().Err(err).Msg("failed to create organization")

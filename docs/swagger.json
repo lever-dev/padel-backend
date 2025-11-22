@@ -97,6 +97,197 @@
                 }
             }
         },
+        "/v1/organizations": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns all organizations in a specific city",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "organizations"
+                ],
+                "summary": "List organizations by city",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "City name",
+                        "name": "city",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.ListOrganizationsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new organization in the city",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "organizations"
+                ],
+                "summary": "Create a new organization",
+                "parameters": [
+                    {
+                        "description": "Organization payload",
+                        "name": "organization",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.CreateOrganizationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.CreateOrganizationResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/v1/organizations/{orgID}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves an organization by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "organizations"
+                ],
+                "summary": "Get an organization",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.OrganizationResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates an existing organization",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "organizations"
+                ],
+                "summary": "Update an organization",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Organization payload",
+                        "name": "organization",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.UpdateOrganizationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/v1/organizations/{orgID}/courts": {
             "get": {
                 "security": [
@@ -377,6 +568,66 @@
                         "description": "Internal Server Error"
                     }
                 }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a reservation for the specified organization and court.",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reservations"
+                ],
+                "summary": "Reserve a court",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Court ID",
+                        "name": "courtID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Reservation payload",
+                        "name": "reservation",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.ReserveCourtRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
             }
         },
         "/v1/organizations/{orgID}/courts/{courtID}/reservations/{reservationID}": {
@@ -455,6 +706,20 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Court ID",
+                        "name": "courtID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
                         "description": "Reservation ID",
                         "name": "reservationID",
                         "in": "path",
@@ -482,68 +747,6 @@
                     },
                     "404": {
                         "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error"
-                    }
-                }
-            }
-        },
-        "/v1/organizations/{orgID}/courts/{courtID}/reserve": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Creates a reservation for the specified organization and court.",
-                "consumes": [
-                    "application/json"
-                ],
-                "tags": [
-                    "reservations"
-                ],
-                "summary": "Reserve a court",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Organization ID",
-                        "name": "orgID",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Court ID",
-                        "name": "courtID",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Reservation payload",
-                        "name": "reservation",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_controllers_http.ReserveCourtRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
                         "schema": {
                             "$ref": "#/definitions/internal_controllers_http.ErrorResponse"
                         }
@@ -618,6 +821,45 @@
                 }
             }
         },
+        "internal_controllers_http.CreateOrganizationRequest": {
+            "type": "object",
+            "properties": {
+                "city": {
+                    "description": "City is the city in which the organization itself is located\nexample: Almaty",
+                    "type": "string",
+                    "example": "Astana"
+                },
+                "name": {
+                    "description": "Name is a organization name\nexample: Padel Club #1",
+                    "type": "string",
+                    "example": "Padel club"
+                }
+            }
+        },
+        "internal_controllers_http.CreateOrganizationResponse": {
+            "type": "object",
+            "properties": {
+                "city": {
+                    "description": "City is the city in which the organization itself is located\nexample: Almaty",
+                    "type": "string",
+                    "example": "Astana"
+                },
+                "createdAt": {
+                    "description": "CreatedAt is the timestamp when the organization was created\nexample: 2025-11-01T10:00:00Z",
+                    "type": "string",
+                    "example": "2025-11-01T10:00:00Z"
+                },
+                "id": {
+                    "description": "ID is a organization UUID",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "Name is a organization name\nexample: Padel Club #1",
+                    "type": "string",
+                    "example": "Padel club"
+                }
+            }
+        },
         "internal_controllers_http.ErrorResponse": {
             "type": "object",
             "properties": {
@@ -635,6 +877,18 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/internal_controllers_http.CourtResponse"
+                    }
+                }
+            }
+        },
+        "internal_controllers_http.ListOrganizationsResponse": {
+            "type": "object",
+            "properties": {
+                "organizations": {
+                    "description": "Organizations is the list of organizations",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_controllers_http.OrganizationResponse"
                     }
                 }
             }
@@ -669,6 +923,36 @@
                 "token": {
                     "type": "string",
                     "example": "jwt-token"
+                }
+            }
+        },
+        "internal_controllers_http.OrganizationResponse": {
+            "type": "object",
+            "properties": {
+                "city": {
+                    "description": "City is the city where the organization is located\nexample: Almaty",
+                    "type": "string",
+                    "example": "Almaty"
+                },
+                "createdAt": {
+                    "description": "CreatedAt is the timestamp when the organization was created\nexample: 2025-11-01T10:00:00Z",
+                    "type": "string",
+                    "example": "2025-11-01T10:00:00Z"
+                },
+                "id": {
+                    "description": "ID is the unique identifier of the created organization\nexample: org-123",
+                    "type": "string",
+                    "example": "org-1"
+                },
+                "name": {
+                    "description": "Name is the organization name\nexample: Padel Club Almaty",
+                    "type": "string",
+                    "example": "Padel Club Almaty"
+                },
+                "updatedAt": {
+                    "description": "UpdatedAt is the timestamp when the organization was last updated (RFC3339 format)\nexample: 2025-11-01T10:00:00Z",
+                    "type": "string",
+                    "example": "2025-11-01T10:00:00Z"
                 }
             }
         },
@@ -786,6 +1070,21 @@
                 "name": {
                     "type": "string",
                     "example": "Updated Court Name"
+                }
+            }
+        },
+        "internal_controllers_http.UpdateOrganizationRequest": {
+            "type": "object",
+            "properties": {
+                "city": {
+                    "description": "City is the updated city where the organization is located\nexample: Astana",
+                    "type": "string",
+                    "example": "Astana"
+                },
+                "name": {
+                    "description": "Name is the updated organization name\nexample: Updated Padel Club",
+                    "type": "string",
+                    "example": "Updated Padel Club"
                 }
             }
         }

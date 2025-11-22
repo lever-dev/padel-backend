@@ -50,7 +50,6 @@ func (s *repositorySuite) TestCreateOrganization() {
 		Name:      "org-1",
 		City:      "Almaty",
 		CreatedAt: time.Date(2024, 7, 1, 8, 0, 0, 0, time.UTC),
-		UpdatedAt: time.Date(2024, 7, 1, 8, 0, 0, 0, time.UTC),
 	}
 
 	err := s.repo.Create(ctx, org)
@@ -58,7 +57,6 @@ func (s *repositorySuite) TestCreateOrganization() {
 
 	orgDB, err := s.repo.GetByID(ctx, org.ID)
 	s.Require().NoError(err)
-
 	s.Require().Equal(org, orgDB)
 }
 
@@ -98,7 +96,7 @@ func (s *repositorySuite) TestGetOrganizationByCity() {
 	s.seedOrganizations(ctx, []*entities.Organization{
 		{
 			ID:   "org-list-1",
-			Name: "org-1",
+			Name: "org-2",
 			City: "Almaty",
 		},
 		{
@@ -147,14 +145,14 @@ func (s *repositorySuite) TestUpdateOrganization() {
 		ID:        "org-update-1",
 		Name:      "Old Name",
 		City:      "Almaty",
-		CreatedAt: time.Now().UTC(),
-		UpdatedAt: time.Now().UTC(),
+		CreatedAt: time.Date(2024, 0o4, 10, 12, 0, 0, 0, time.Local),
 	}
 
 	s.seedOrganizations(ctx, []*entities.Organization{org})
 
 	org.Name = "New Name"
 	org.City = "Astana"
+	org.UpdatedAt = time.Now().UTC()
 
 	err := s.repo.Update(ctx, org)
 	s.Require().NoError(err)

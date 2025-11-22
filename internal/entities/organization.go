@@ -1,6 +1,10 @@
 package entities
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type Organization struct {
 	ID        string
@@ -10,4 +14,11 @@ type Organization struct {
 	UpdatedAt time.Time
 }
 
-// TO DO: NewOrganization constructor and validation
+func NewOrganization(name, city string) *Organization {
+	return &Organization{
+		ID:        uuid.NewString(),
+		Name:      name,
+		City:      city,
+		CreatedAt: time.Now().UTC(),
+	}
+}

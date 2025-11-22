@@ -13,10 +13,12 @@ import (
 	"github.com/lever-dev/padel-backend/internal/config"
 	httpPkg "github.com/lever-dev/padel-backend/internal/controllers/http"
 	courtRepo "github.com/lever-dev/padel-backend/internal/repositories/courts"
+	organizationRepo "github.com/lever-dev/padel-backend/internal/repositories/organization"
 	reservationRepo "github.com/lever-dev/padel-backend/internal/repositories/reservation"
 	"github.com/lever-dev/padel-backend/internal/repositories/users"
 	"github.com/lever-dev/padel-backend/internal/services/auth"
 	"github.com/lever-dev/padel-backend/internal/services/court"
+	"github.com/lever-dev/padel-backend/internal/services/organization"
 	"github.com/lever-dev/padel-backend/internal/services/reservation"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -52,16 +54,23 @@ var serveCmd = &cobra.Command{
 			log.Fatal().Err(err).Msg("failed to connect to postgres")
 		}
 
+		organizationRepo := organizationRepo.NewRepository(cfg.Postgres.ConnectionURL)
+		if err := organizationRepo.Connect(ctx); err != nil {
+			log.Fatal().Err(err).Msg("failed to connect to postgres")
+		}
+
 		reservationService := reservation.NewService(reservationRepo, reservation.NewLocalLocker())
 		courtService := court.NewService(courtRepo)
 		authService := auth.NewService(usersRepo)
+		organizationService := organization.NewService(organizationRepo)
 
+		organizationHandler := httpPkg.NewOrganizationHandler(organizationService)
 		reservationHandler := httpPkg.NewReservationHandler(reservationService)
 		courtHandler := httpPkg.NewCourtHandler(courtService)
 		authHandler := httpPkg.NewAuthHandler(authService)
 		authMiddleware := httpPkg.NewAuthMiddleware(authService)
 
-		router := httpPkg.NewRouter(reservationHandler, authHandler, courtHandler, authMiddleware)
+		router := httpPkg.NewRouter(reservationHandler, organizationHandler, courtHandler, authHandler, authMiddleware)
 
 		httpServer := http.Server{
 			Addr:              cfg.HTTPServerAddr,
@@ -96,6 +105,7 @@ var serveCmd = &cobra.Command{
 
 		courtRepo.Close()
 		reservationRepo.Close()
+		organizationRepo.Close()
 		usersRepo.Close()
 
 		log.Info().Msg("Bye Bye !")
@@ -108,7 +118,6 @@ func initLogger(cfg config.Config) error {
 	logLvl, err := zerolog.ParseLevel(cfg.LogLevel)
 	if err != nil {
 		return fmt.Errorf("parse level: %w", err)
-
 	}
 
 	zerolog.SetGlobalLevel(logLvl)

@@ -87,6 +87,39 @@ func (s *ServiceSuite) TestReserveCourt() {
 							ReservedTo:   time.Now().Add(2 * time.Hour),
 						},
 					}, nil)
+
+				mockRepo.EXPECT().Create(gomock.Any(), gomock.Any()).Times(0)
+			},
+			wantErr: true,
+		},
+		{
+			name:    "conflict - court pending",
+			courtID: "court-1",
+			reservation: &entities.Reservation{
+				ID:           "reservation-3",
+				CourtID:      "court-1",
+				ReservedBy:   "user-3",
+				Status:       entities.PendingReservationStatus,
+				ReservedFrom: time.Now().Add(3 * time.Hour),
+				ReservedTo:   time.Now().Add(4 * time.Hour),
+				CreatedAt:    time.Now(),
+			},
+			setupMocks: func(mockRepo *mocks.MockReservationsRepository, res *entities.Reservation) {
+				mockRepo.EXPECT().
+					ListByCourtAndTimeRange(gomock.Any(), "court-1", res.ReservedFrom, res.ReservedTo).
+					Return([]entities.Reservation{
+						{
+							ID:           "existing-pending",
+							CourtID:      "court-1",
+							ReservedBy:   "other-user",
+							Status:       entities.PendingReservationStatus,
+							ReservedFrom: res.ReservedFrom,
+							ReservedTo:   res.ReservedTo,
+						},
+					}, nil)
+				mockRepo.EXPECT().
+					Create(gomock.Any(), gomock.Any()).
+					Times(0)
 			},
 			wantErr: true,
 		},
@@ -128,6 +161,7 @@ func (s *ServiceSuite) TestReserveCourt() {
 
 			if tt.wantErr {
 				s.Error(err)
+				return
 			} else {
 				s.NoError(err)
 			}

@@ -2,11 +2,13 @@ package organization
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/lever-dev/padel-backend/internal/entities"
 )
@@ -46,7 +48,6 @@ func (r *Repository) Create(ctx context.Context, organization *entities.Organiza
 
 	if organization.CreatedAt.IsZero() {
 		organization.CreatedAt = time.Now().UTC()
-		organization.UpdatedAt = time.Now().UTC()
 	}
 
 	d := newDTO(organization)
@@ -58,9 +59,15 @@ func (r *Repository) Create(ctx context.Context, organization *entities.Organiza
 		d.Name,
 		d.City,
 		d.CreatedAt,
-		d.UpdatedAt,
 	)
 	if err != nil {
+		var pgErr *pgconn.PgError
+
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "23505" {
+				return entities.ErrOrganizationAlreadyExist
+			}
+		}
 		return fmt.Errorf("exec: %w", err)
 	}
 
@@ -72,9 +79,8 @@ const createOrganizationQuery = `
 		id,
 		name,
 		city,
-		created_at,
-		updated_at
-	) VALUES ($1, $2, $3, $4, $5)
+		created_at
+	) VALUES ($1, $2, $3, $4)
 `
 
 func (r *Repository) GetByID(ctx context.Context, organizationID string) (*entities.Organization, error) {
@@ -150,8 +156,6 @@ func (r *Repository) Update(ctx context.Context, org *entities.Organization) err
 		return fmt.Errorf("not connected to pool")
 	}
 
-	org.UpdatedAt = time.Now().UTC()
-
 	tag, err := r.pool.Exec(
 		ctx,
 		updateOrganizationQuery,
@@ -208,20 +212,23 @@ type rowScanner interface {
 
 func scan(scanner rowScanner) (entities.Organization, error) {
 	var d dto
+	var sqlUpdateAt sql.NullTime
 
 	err := scanner.Scan(
 		&d.ID,
 		&d.Name,
 		&d.City,
 		&d.CreatedAt,
-		&d.UpdatedAt,
+		&sqlUpdateAt,
 	)
 	if err != nil {
 		return entities.Organization{}, err
 	}
 
 	d.CreatedAt = d.CreatedAt.UTC()
-	d.UpdatedAt = d.UpdatedAt.UTC()
 
+	if sqlUpdateAt.Valid {
+		d.UpdatedAt = sqlUpdateAt.Time.UTC()
+	}
 	return d.toEntity(), nil
 }
